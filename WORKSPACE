@@ -97,9 +97,9 @@ bind(
 # folly
 new_http_archive(
     name = "folly_archive",
-    url = "https://github.com/facebook/folly/archive/v2016.10.31.00.tar.gz",
-    strip_prefix = "folly-2016.10.31.00",
-    sha256 = "7bef9ee956248f68f1c4e96be67561842ee6cc030a58e132b93b9be57b6b29ea",
+    url = "https://github.com/facebook/folly/archive/v2016.11.07.00.tar.gz",
+    strip_prefix = "folly-2016.11.07.00",
+    sha256 = "4400d7f0fead90d88ce4caee9f0e9aeb8008c9954ea9034e19ae7226175206ba",
     build_file = "third_party/folly.BUILD",
 )
 
@@ -383,9 +383,9 @@ bind(
 # wangle
 new_http_archive(
     name = "wangle_archive",
-    url = "https://github.com/facebook/wangle/archive/v2016.10.31.00.tar.gz",
-    strip_prefix = "wangle-2016.10.31.00",
-    sha256 = "b94f0823918b2d09fd5acc42e9b5f3b3beb356dca192bee191aa544dd2c90b59",
+    url = "https://github.com/facebook/wangle/archive/v2016.11.07.00.tar.gz",
+    strip_prefix = "wangle-2016.11.07.00",
+    sha256 = "31e9822c767ab800eda0846ce357d7fc09d7d40f7562eed06ae4f95b7dcb3a9f",
     build_file = "third_party/wangle.BUILD",
 )
 
