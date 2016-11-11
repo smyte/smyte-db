@@ -192,7 +192,7 @@ new_http_archive(
     url = "https://developers.google.com/resources/api-libraries/download/storage/v1/cpp",
     type = "zip",
     strip_prefix = "storage",
-    sha256 = "ae8a24611e9a92ae7d27107402ab7fb8f6323ea5aae78beef14345a60c5937eb",
+    sha256 = "aa78f220cbf081b57ffa09a633ed36014e11daff9c8e413467f87c309cc4d270",
     build_file = "third_party/google_cloud_storage.BUILD",
 )
 
