@@ -1,3 +1,6 @@
 [submodule "ratelimit"]
 	path = ratelimit
 	url = https://github.com/smyte/ratelimit
+[submodule "counters"]
+	path = counters
+	url = https://github.com/smyte/counters.git
