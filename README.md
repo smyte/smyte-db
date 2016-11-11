@@ -1,6 +1,7 @@
 # smyte-db
 
 This repo is the central build environment for all Smyte C++ projects. For documentation, issues, and code for the submodules in this project, please see each project's individual repo:
+  * [counters](https://github.com/smyte/counters)
   * [ratelimit](https://github.com/smyte/ratelimit)
 
 Smyte's C++ development is based on facebook's [folly](https://github.com/facebook/folly) and [wangle](https://github.com/facebook/wangle) libraries to build high performance servers. The build system uses Google's [bazel](http://bazel.io/). By default, it builds a single executable binary that can be deployed to production directly.
