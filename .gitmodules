@@ -1,0 +1,3 @@
+[submodule "ratelimit"]
+	path = ratelimit
+	url = https://github.com/smyte/ratelimit
