@@ -1,4 +1,4 @@
-# cpp-build
+# smyte-db
 
 This repo is the central build environment for all Smyte C++ projects. For documentation, issues, and code for the submodules in this project, please see each project's individual repo:
   * [ratelimit](https://github.com/smyte/ratelimit)
