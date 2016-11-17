@@ -23,6 +23,7 @@ cc_library(
         "AbstractConsumer.h",
     ],
     deps = [
+        ":consumer_helper",
         "//external:glog",
     ],
 )

@@ -24,7 +24,7 @@ namespace kafka {
 namespace store {
 
 // Consumer for kafka-store
-class Consumer : public virtual infra::kafka::AbstractConsumer {
+class Consumer : public infra::kafka::AbstractConsumer {
  public:
   static std::string getObjectName(const std::string& objectNamePrefix, const std::string& topic, int partition,
                                    int64_t fileOffset) {
@@ -36,9 +36,11 @@ class Consumer : public virtual infra::kafka::AbstractConsumer {
   // cold storage. However, we still use kafka cluster to store current offset to ease metrics reporting
   // TODO(yunjing): define an interface for cold storage and support other solutions such as S3
   Consumer(const std::string& brokerList, const std::string& bucketName, const std::string& objectNamePrefix,
-           const std::string& topic, int partition, const std::string& groupId,
+           const std::string& topic, int partition, const std::string& groupId, const std::string& offsetKey,
+           std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper,
            std::shared_ptr<platform::gcloud::GoogleCloudStorage> gcs)
-      : brokerList_(brokerList),
+      : infra::kafka::AbstractConsumer(offsetKey, consumerHelper),
+        brokerList_(brokerList),
         bucketName_(bucketName),
         objectNamePrefix_(objectNamePrefix),
         topic_(topic),
@@ -75,7 +77,9 @@ class Consumer : public virtual infra::kafka::AbstractConsumer {
 
   // Load the kafka and file offsets that have been previously committed
   // Return value indicates if the operation succeeded
-  virtual bool loadCommittedKafkaAndFileOffsets(int64_t* kafkaOffset, int64_t* fileOffset) = 0;
+  virtual bool loadCommittedKafkaAndFileOffsets(int64_t* kafkaOffset, int64_t* fileOffset) {
+    return consumerHelper()->loadCommittedKafkaAndFileOffsetsFromDb(offsetKey(), kafkaOffset, fileOffset);
+  }
 
   int64_t loadCommittedKafkaOffset(void) override {
     int64_t kafkaOffset = RdKafka::Topic::OFFSET_INVALID;

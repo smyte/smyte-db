@@ -17,8 +17,10 @@ namespace kafka {
 
 class Consumer : public AbstractConsumer, public EventCallback {
  public:
-  Consumer(const std::string& brokerList, const std::string& topicStr, int partition, const std::string& groupId)
-      : brokerList_(brokerList),
+  Consumer(const std::string& brokerList, const std::string& topicStr, int partition, const std::string& groupId,
+           const std::string& offsetKey, std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
+      : AbstractConsumer(offsetKey, consumerHelper),
+        brokerList_(brokerList),
         topicStr_(topicStr),
         partition_(partition),
         groupId_(groupId),
@@ -51,9 +53,14 @@ class Consumer : public AbstractConsumer, public EventCallback {
   // Default implementation is available for everything but processOneMessage
 
   // Load committed offset from persistent storage.
-  // The default implementation is always start from the beginning
   int64_t loadCommittedKafkaOffset(void) override {
-    return RdKafka::Topic::OFFSET_BEGINNING;
+    return consumerHelper()->loadCommittedOffsetFromDb(offsetKey());
+  }
+
+  // Get updates about kafka stats
+  void processStatsEvent(const RdKafka::Event& statsEvent) override {
+    // The superclass implementation logs the stats, which becomes too verbose, so ignore it here
+    consumerHelper()->updateStats(statsEvent.str(), offsetKey());
   }
 
   // Process a batch of messages.

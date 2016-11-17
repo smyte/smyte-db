@@ -3,9 +3,11 @@
 
 #include <memory>
 #include <chrono>
+#include <string>
 #include <thread>
 
 #include "glog/logging.h"
+#include "infra/kafka/ConsumerHelper.h"
 
 namespace infra {
 namespace kafka {
@@ -18,8 +20,13 @@ class AbstractConsumer {
         .count();
   }
 
-  // run_ defaults to true so that client can signal to stop the consumer thread when it's about to start
-  AbstractConsumer() : initialized_(false), run_(true), consumerThread_(nullptr) {}
+  AbstractConsumer(const std::string& offsetKey, std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
+      : offsetKey_(offsetKey),
+        consumerHelper_(consumerHelper),
+        initialized_(false),
+        // run_ defaults to true so that client can signal to stop the consumer thread when it's about to start
+        run_(true),
+        consumerThread_(nullptr) {}
 
   virtual ~AbstractConsumer() {}
 
@@ -69,11 +76,15 @@ class AbstractConsumer {
   virtual void processBatch(int timeoutMs) = 0;
 
  protected:
+  const std::string& offsetKey() const { return offsetKey_; }
+  std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper() { return consumerHelper_; }
   bool run() const { return run_; }
   bool initialized() const { return initialized_; }
   void setInitialized() { initialized_ = true; }
 
  private:
+  const std::string offsetKey_;
+  std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper_;
   bool initialized_;
   bool run_;
   std::unique_ptr<std::thread> consumerThread_;
