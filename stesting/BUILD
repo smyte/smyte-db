@@ -11,7 +11,7 @@ cc_library(
     deps = [
         "//external:boost",
         "//external:glog",
-        "//external:gtest",
+        "//external:gmock",
         "//external:rocksdb",
         "//pipeline:database_manager",
     ],
