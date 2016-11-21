@@ -38,13 +38,15 @@
 // atomic_64
 #define ATOMIC_OP(OP1,OP2,PTR,VAL) __atomic_ ## OP1 ## _ ## OP2(PTR, VAL, __ATOMIC_SEQ_CST)
 // parseversion
-#define RDKAFKA_VERSION_STR "0.9.1"
+#define RDKAFKA_VERSION_STR "0.9.2"
 // parseversion
-#define MKL_APP_VERSION "0.9.1"
+#define MKL_APP_VERSION "0.9.2"
 // zlib
 #define WITH_ZLIB 1
 // WITH_SNAPPY
 #define WITH_SNAPPY 1
+// WITH_SOCKEM
+#define WITH_SOCKEM 1
 // libssl
 #define WITH_SSL 1
 // regex

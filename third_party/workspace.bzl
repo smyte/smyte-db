@@ -252,9 +252,9 @@ def smyte_workspace(workspace_name):
     # librdkafka
     native.new_http_archive(
         name = "librdkafka_archive",
-        url = "https://github.com/edenhill/librdkafka/archive/0.9.1.tar.gz",
-        strip_prefix = "librdkafka-0.9.1",
-        sha256 = "5ad57e0c9a4ec8121e19f13f05bacc41556489dfe8f46ff509af567fdee98d82",
+        url = "https://github.com/edenhill/librdkafka/archive/18631f3.tar.gz",
+        strip_prefix = "librdkafka-18631f3836600430377b96fe0cadfaa7d038c8a7",
+        sha256 = "7382d769ec4d11b77401419376b7e2986a661cc9c290e4a4413dee9c1c7c4b3e",
         build_file = workspace_name + "//third_party:librdkafka.BUILD",
     )
     native.bind(
