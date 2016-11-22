@@ -34,7 +34,7 @@ void OffsetManager::init(void) {
 
   // Fetch the offset to make sure connection works.
   int64_t offset = RD_KAFKA_OFFSET_INVALID;
-  CHECK(committedOffset(1000, &offset));
+  CHECK(committedOffset(5000, &offset));
   LOG(INFO) << "Last committed offset was " << offset;
 }
 
