@@ -54,9 +54,9 @@ class GoogleCloudStorage {
 
   // Make sure credential_ is still valid by authenticating with Google Cloud when needed
   // TODO(yunjing): Build a more general authentication mechanism to support other Google Cloud services
-  void authenticate(void);
+  googleapis::util::Status authenticate(void);
   // Update credential by talking to GCE metadata server
-  void updateCredentialJsonFromGce(void);
+  googleapis::util::Status updateCredentialJsonFromGce(void);
 
   std::unique_ptr<googleapis::client::HttpTransportLayerConfig> httpConfig_;
   std::unique_ptr<googleapis::client::HttpTransport> httpTransport_;

@@ -18,8 +18,7 @@ using googleapis::client::DataReader;
 using googleapis::client::HttpRequest;
 using googleapis::util::Status;
 
-googleapis::util::Status GoogleCloudStorage::getObject(const std::string& bucketName, const std::string& objectName,
-                                                       Object* object) {
+Status GoogleCloudStorage::getObject(const std::string& bucketName, const std::string& objectName, Object* object) {
   authenticate();
 
   const auto& objectsResource = storageService_->get_objects();
@@ -30,10 +29,11 @@ googleapis::util::Status GoogleCloudStorage::getObject(const std::string& bucket
 
 Status GoogleCloudStorage::downloadObject(const std::string& bucketName, const std::string& objectName,
                                           const std::string& downloadPath, google_storage_api::Object* object) {
-  authenticate();
+  Status status = authenticate();
+  if (!status.ok()) return status;
 
   // Get object metadata
-  Status status = getObject(bucketName, objectName, object);
+  status = getObject(bucketName, objectName, object);
   if (!status.ok()) return status;
 
   // Download object data
@@ -49,32 +49,33 @@ Status GoogleCloudStorage::downloadObject(const std::string& bucketName, const s
   CHECK(folly::writeFile(dataReader->RemainderToString(), downloadPath.data()))
       << "Fail to write object " << bucketName << "/" << objectName << " to " << downloadPath;
   if (dataReader->done()) {
-    return Status();
+    return googleapis::client::StatusOk();
   } else {
     return dataReader->status();
   }
 }
 
-void GoogleCloudStorage::authenticate(void) {
+Status GoogleCloudStorage::authenticate(void) {
   if (!credential_.access_token().empty() &&
       nowSec() + kCredentialExpirationMarginSec < credential_.expiration_timestamp_secs()) {
     // Credential is still valid, no need to refresh
-    return;
+    return googleapis::client::StatusOk();
   }
   // Need to refresh access token
   // TODO(yunjing): implement generic OAuth2
-  updateCredentialJsonFromGce();
+  return updateCredentialJsonFromGce();
 }
 
-void GoogleCloudStorage::updateCredentialJsonFromGce(void) {
+Status GoogleCloudStorage::updateCredentialJsonFromGce(void) {
   LOG(INFO) << "Refreshing credential from GCE";
   auto request = std::unique_ptr<HttpRequest>(httpTransport_->NewHttpRequest(HttpRequest::GET));
   request->set_url(kGceCredentialUrl);
   request->AddHeader("Metadata-Flavor", "Google");
   Status status = request->Execute();
-  CHECK(status.ok()) << status.ToString();
+  if (!status.ok()) return status;
   status = credential_.Update(request->response()->body_reader());
-  CHECK(status.ok()) << status.ToString();
+  if (!status.ok()) return status;
+  return googleapis::client::StatusOk();
 }
 
 constexpr char GoogleCloudStorage::kGceCredentialUrl[];
