@@ -68,10 +68,10 @@ size_t ScheduledTaskQueue::batchProcessing(int64_t maxTimestampMs) {
 
 size_t ScheduledTaskQueue::scanPendingTasks(int64_t maxTimestampMs, size_t limit, std::vector<ScheduledTask>* tasks) {
   rocksdb::ReadOptions readOptions;
-  readOptions.tailing = true;
   readOptions.total_order_seek = true;  // unnecessary as long as not using hash index; keep it here for safety
   std::string buf;
-  rocksdb::Slice maxTimestamp = ScheduledTask::encodeTimestamp(maxTimestampMs, &buf);
+  // rocksdb iterator upper bound is exclusive
+  rocksdb::Slice maxTimestamp = ScheduledTask::encodeTimestamp(maxTimestampMs + 1, &buf);
   readOptions.iterate_upper_bound = &maxTimestamp;
   auto iter = std::unique_ptr<rocksdb::Iterator>(databaseManager_->db()->NewIterator(readOptions, columnFamily_));
   size_t count = 0;
