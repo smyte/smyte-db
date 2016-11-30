@@ -65,11 +65,11 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
     // intentionally break monitoring for read timeout so that we don't leave monitoring on forever
     removeMonitor(ctx);
     std::string address = getPeerAddressPortStr(ctx);
-    LOG(WARNING) << "Read exception: " << exceptionStr(e) << " for " << address;
+    DLOG(WARNING) << "Read exception: " << exceptionStr(e) << " for " << address;
     try {
       ctx->getTransport()->close();
     } catch (...) {
-      LOG(ERROR) << "Fail to close socket: " << address;
+      DLOG(ERROR) << "Fail to close socket: " << address;
     }
     close(ctx);
   }
