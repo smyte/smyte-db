@@ -189,7 +189,7 @@ class RedisPipelineBootstrap {
       scheduledTaskQueue_->destroy();
     }
     for (auto& producerEntry : kafkaProducers_) {
-      producerEntry.second->destroy();
+      if (producerEntry.second) producerEntry.second->destroy();
     }
     if (databaseManager_) {
       databaseManager_->destroy();

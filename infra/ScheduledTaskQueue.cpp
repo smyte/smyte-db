@@ -25,10 +25,11 @@ void ScheduledTaskQueue::start() {
 
   executionThread_.reset(new std::thread([this]() {
     while (this->run_) {
-      int64_t currentTimestampMs =
-        std::chrono::duration_cast<milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      // scan up to the next millisecond
+      int64_t maxTimestampMs =
+        std::chrono::duration_cast<milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + 1;
       // loop until the queue is exhausted
-      while (this->batchProcessing(currentTimestampMs) == kScanBatchSize) {}
+      while (this->batchProcessing(maxTimestampMs) == kScanBatchSize) {}
       std::this_thread::sleep_for(milliseconds(kCheckIntervalMs));
     }
   }));
@@ -70,8 +71,7 @@ size_t ScheduledTaskQueue::scanPendingTasks(int64_t maxTimestampMs, size_t limit
   rocksdb::ReadOptions readOptions;
   readOptions.total_order_seek = true;  // unnecessary as long as not using hash index; keep it here for safety
   std::string buf;
-  // rocksdb iterator upper bound is exclusive
-  rocksdb::Slice maxTimestamp = ScheduledTask::encodeTimestamp(maxTimestampMs + 1, &buf);
+  rocksdb::Slice maxTimestamp = ScheduledTask::encodeTimestamp(maxTimestampMs, &buf);
   readOptions.iterate_upper_bound = &maxTimestamp;
   auto iter = std::unique_ptr<rocksdb::Iterator>(databaseManager_->db()->NewIterator(readOptions, columnFamily_));
   size_t count = 0;
