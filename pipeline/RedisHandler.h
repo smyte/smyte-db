@@ -76,7 +76,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
   void readEOF(Context* ctx) override {
     removeMonitor(ctx);
-    LOG(INFO) << "Connection closed: " << getPeerAddressPortStr(ctx);
+    DLOG(INFO) << "Connection closed: " << getPeerAddressPortStr(ctx);
     close(ctx);
   }
 

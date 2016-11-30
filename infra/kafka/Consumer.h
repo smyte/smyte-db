@@ -84,7 +84,7 @@ class Consumer : public AbstractConsumer, public EventCallback {
     case RdKafka::ERR__TIMED_OUT:
       break;
     case RdKafka::ERR__PARTITION_EOF:
-      LOG(INFO) << "No more messages for partition " << partition_ << " of " << topicStr_;
+      DLOG(INFO) << "No more messages for partition " << partition_ << " of " << topicStr_;
       break;
     default:
       LOG(ERROR) << "Consume failed: " << msgWithError.errstr();
