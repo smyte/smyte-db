@@ -183,6 +183,11 @@ class RedisPipelineBootstrap {
   void stopOptionalComponents() {
     // stop in the reverse order of start
     for (auto& consumer : kafkaConsumers_) {
+      // call stop first as it's non-blocking and consumers will stop in parallel
+      consumer->stop();
+    }
+    for (auto& consumer : kafkaConsumers_) {
+      // destroy is blocking and it will wait for each consumer to completely stop sequentially
       consumer->destroy();
     }
     if (scheduledTaskQueue_) {
