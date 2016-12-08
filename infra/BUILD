@@ -86,6 +86,9 @@ cc_library(
     hdrs = [
         "SmyteId.h",
     ],
+    deps = [
+        "//external:boost",
+    ],
     copts = [
         "-std=c++14"
     ],

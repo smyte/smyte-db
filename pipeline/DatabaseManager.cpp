@@ -53,4 +53,31 @@ bool DatabaseManager::freeze(std::vector<std::string>* fileList) {
   return true;
 }
 
+// This implementation is a modified version of folly::uriEscape. The main difference is that it also escapes `~`.
+void DatabaseManager::escapeKeyStr(const std::string& str, std::string* out) {
+  static const char hexValues[] = "0123456789ABCDEF";
+  char esc[3];
+  esc[0] = '%';
+  // May need to escape 10% of the input string
+  out->reserve(str.size() + out->size() + str.size() / 10);
+  auto p = str.begin();
+  auto last = p;
+  while (p != str.end()) {
+    char c = *p;
+    unsigned char v = static_cast<unsigned char>(c);
+    if (v < 33 || v > 125 || v == 37) {
+      out->append(&*last, p - last);
+      esc[1] = hexValues[v >> 4];
+      esc[2] = hexValues[v & 0x0f];
+      out->append(esc, 3);
+      ++p;
+      last = p;
+    } else {
+      // advance first and copy an entire block of normal characters at once
+      ++p;
+    }
+  }
+  out->append(&*last, p - last);
+}
+
 }  // namespace pipeline

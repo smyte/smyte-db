@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "folly/Conv.h"
 #include "glog/logging.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
@@ -37,6 +38,19 @@ class DatabaseManager {
     std::memcpy(intValue, value.data(), sizeof(*intValue));
     return true;
   }
+
+  // TODO(yunjing): this is copied from pipeline::RedisHandler. Find a way to avoid duplication.
+  static bool parseInt(const std::string& value, int64_t* intValue) {
+    try {
+      *intValue = folly::to<int64_t>(value);
+      return true;
+    } catch (folly::ConversionError&) {
+      return false;
+    }
+  }
+
+  // Escape non-printable characters, %, and ~ using percent-encoding for strings to be used as database keys
+  static void escapeKeyStr(const std::string& str, std::string* out);
 
   DatabaseManager(const ColumnFamilyMap& columnFamilyMap, bool masterReplica, rocksdb::DB* db)
       : columnFamilyMap_(columnFamilyMap), masterReplica_(masterReplica), db_(db), metadataColumnFamily_(nullptr) {

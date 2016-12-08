@@ -107,6 +107,21 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "database_manager_test",
+    size = "small",
+    srcs = [
+        "DatabaseManagerTest.cpp"
+    ],
+    deps = [
+        ":database_manager",
+        "//external:gtest_main",
+    ],
+    copts = [
+        "-std=c++11",
+    ],
+)
+
 cc_library(
     name = "redis_pipeline_bootstrap",
     srcs = [
