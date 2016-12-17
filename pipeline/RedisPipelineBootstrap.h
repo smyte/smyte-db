@@ -208,6 +208,9 @@ class RedisPipelineBootstrap {
   void stopServer() {
     if (server_) {
       server_->stop();
+      server_->join();
+      // Don't delete server since it holds pointers to things that might be needed by other threads.
+      // It's not really leaking memory since we are in the shutdown process anyway.
       server_ = nullptr;
     }
   }
