@@ -18,8 +18,8 @@ class ConsumerTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
     FLAGS_logtostderr = true;
-    gflags::InitGoogleLogging("infra::kafka::ConsumerTest");
-    gflags::InstallFailureSignalHandler();
+    google::InstallFailureSignalHandler();
+    google::InitGoogleLogging("infra::kafka::ConsumerTest");
   }
 };
 

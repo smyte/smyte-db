@@ -30,8 +30,8 @@ class TestWithRocksDb : public ::testing::Test {
     static bool initialized = false;
     if (!initialized) {
       FLAGS_logtostderr = true;
-      gflags::InitGoogleLogging("stesting::TestWithRocksDb");
-      gflags::InstallFailureSignalHandler();
+      google::InstallFailureSignalHandler();
+      google::InitGoogleLogging("stesting::TestWithRocksDb");
       initialized = true;
     }
   }

@@ -10,9 +10,8 @@ genrule(
     outs = [
         "include/glog/logging.h",
     ],
-    cmd = "sed 's/@ac_google_namespace@/gflags/g' $(<) | " +
-        "sed 's/google::DummyClassToDefineOperator/gflags::DummyClassToDefineOperator/' | " +
-        "sed 's/@ac_google_start_namespace@/namespace gflags {/g' | " +
+    cmd = "sed 's/@ac_google_namespace@/google/g' $(<) | " +
+        "sed 's/@ac_google_start_namespace@/namespace google {/g' | " +
         "sed 's/@ac_google_end_namespace@/}/g' | " +
         "sed 's/@ac_cv_have_unistd_h@/1/g' | " +
         "sed 's/@ac_cv_have_stdint_h@/1/g' | " +
@@ -46,8 +45,8 @@ genrule(
     outs = [
         "include/glog/raw_logging.h",
     ],
-    cmd = "sed 's/@ac_google_namespace@/gflags/g' $(<) | " +
-        "sed 's/@ac_google_start_namespace@/namespace gflags {/g' | " +
+    cmd = "sed 's/@ac_google_namespace@/google/g' $(<) | " +
+        "sed 's/@ac_google_start_namespace@/namespace google {/g' | " +
         "sed 's/@ac_google_end_namespace@/}/g' | " +
         "sed 's/@ac_cv___attribute___printf_4_5@/__attribute__((__format__ (__printf__, 4, 5)))/g' >$(@)",
 )
@@ -60,8 +59,8 @@ genrule(
     outs = [
         "include/glog/stl_logging.h",
     ],
-    cmd = "sed 's/@ac_google_namespace@/gflags/g' $(<) | " +
-        "sed 's/@ac_google_start_namespace@/namespace gflags {/g' | " +
+    cmd = "sed 's/@ac_google_namespace@/google/g' $(<) | " +
+        "sed 's/@ac_google_start_namespace@/namespace google {/g' | " +
         "sed 's/@ac_google_end_namespace@/}/g' | " +
         "sed 's/@ac_cv_cxx_using_operator@/1/g' >$(@)",
 )
@@ -74,8 +73,8 @@ genrule(
     outs = [
         "include/glog/vlog_is_on.h",
     ],
-    cmd = "sed 's/@ac_google_namespace@/gflags/g' $(<) | " +
-        "sed 's/@ac_google_start_namespace@/namespace gflags {/g' | " +
+    cmd = "sed 's/@ac_google_namespace@/google/g' $(<) | " +
+        "sed 's/@ac_google_start_namespace@/namespace google {/g' | " +
         "sed 's/@ac_google_end_namespace@/}/g' >$(@)",
 )
 

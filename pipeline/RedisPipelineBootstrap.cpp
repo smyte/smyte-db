@@ -12,6 +12,7 @@
 
 #include "folly/Conv.h"
 #include "folly/Format.h"
+#include "folly/init/Init.h"
 #include "folly/json.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -386,10 +387,7 @@ static void defaultSignalHandler(int signum) {
 DECLARE_bool(logtostderr);
 int main(int argc, char** argv) {
   FLAGS_logtostderr = true;  // good for docker, but it can be overwritten in runtime
-  gflags::InitGoogleLogging(argv[0]);
-  gflags::InstallFailureSignalHandler();
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  gflags::SetUsageMessage(argv[0]);
+  folly::init(&argc, &argv);
 
   signal(SIGINT, defaultSignalHandler);
   signal(SIGTERM, defaultSignalHandler);

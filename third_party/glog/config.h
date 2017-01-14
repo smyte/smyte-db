@@ -5,7 +5,7 @@
 /* #undef DISABLE_RTTI */
 
 /* Namespace for Google classes */
-#define GOOGLE_NAMESPACE gflags
+#define GOOGLE_NAMESPACE google
 
 /* Define if you have the `dladdr' function */
 /* #undef HAVE_DLADDR */
@@ -178,7 +178,7 @@
 #define _END_GOOGLE_NAMESPACE_ }
 
 /* Puts following code inside the Google namespace */
-#define _START_GOOGLE_NAMESPACE_ namespace gflags {
+#define _START_GOOGLE_NAMESPACE_ namespace google {
 
 // Annoying stuff for windows -- makes sure clients can import these functions
 #ifndef GOOGLE_GLOG_DLL_DECL

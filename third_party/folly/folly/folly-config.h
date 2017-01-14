@@ -161,11 +161,6 @@
 #define FOLLY_HAVE_LIBGLOG 1
 #endif
 
-/* Define to 1 if you have the `jemalloc' library (-ljemalloc). */
-#ifndef HAVE_LIBJEMALLOC
-#define HAVE_LIBJEMALLOC 1
-#endif
-
 /* Define to 1 if you have the `lz4' library (-llz4). */
 /* #undef HAVE_LIBLZ4 */
 
@@ -447,6 +442,11 @@
 
 /* Define to 1 if the gflags namespace is not "gflags" */
 /* #undef UNUSUAL_GFLAGS_NAMESPACE */
+
+/* Enable jemalloc */
+#ifndef USE_JEMALLOC
+#define USE_JEMALLOC 1
+#endif
 
 /* Define to 1 if we are using libc++. */
 /* #undef USE_LIBCPP */
