@@ -26,11 +26,19 @@ void Producer::initialize() {
     LOG(FATAL) << "Setting Kafka event callback failed: " << errstr;
   }
 
+  if (conf_->set("dr_cb", static_cast<RdKafka::DeliveryReportCb*>(this), errstr) != RdKafka::Conf::CONF_OK) {
+    LOG(FATAL) << "Setting Kafka delivery report callback failed: " << errstr;
+  }
+
   // by default, require messages to be committed by all in sync replica (ISRs)
   if (topicConf_->set("request.required.acks", "-1", errstr) != RdKafka::Conf::CONF_OK) {
     LOG(FATAL) << "Setting request.required.acks for topic ["  << topicStr_ << "] failed: " << errstr;
   }
 
+  // always return the produced offset to the client
+  if (topicConf_->set("produce.offset.report", "true", errstr) != RdKafka::Conf::CONF_OK) {
+    LOG(FATAL) << "Setting produce.offset.report for topic ["  << topicStr_ << "] failed: " << errstr;
+  }
   if (partitioner_ && topicConf_->set(
       "partitioner_cb", static_cast<RdKafka::PartitionerCb*>(this), errstr) != RdKafka::Conf::CONF_OK) {
     LOG(FATAL) << "Setting partitioner callback for topic ["  << topicStr_ << "] failed: " << errstr;

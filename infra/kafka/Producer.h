@@ -41,8 +41,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
         topicStr_(topicStr),
         partition_(config.partition),
         partitioner_(config.partitioner),
-        deliveryHandler_(config.deliveryHandler),
         useCompression_(config.useCompression),
+        deliveryHandler_(config.deliveryHandler),
         conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL)),
         topicConf_(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC)) {
     initialize();
@@ -55,8 +55,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
     LOG(INFO) << "Kafka producer send queue is clean";
   }
 
-  // Implement dr_cb required by RdKafka::PartitionerCb.
-  // Instead of overriding, this, clients should pass in a Partitioner in configuration.
+  // Implement dr_cb required by RdKafka::DeliveryReportCb.
+  // Instead of overriding this, clients should pass in a DeliveryHandler in configuration.
   void dr_cb(RdKafka::Message& message) override {
     deliveryHandler_(message);
   }
@@ -65,6 +65,12 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
   // Clients may override partitioning behavior by passing in a Partitioner in configuration.
   int partitioner_cb(const RdKafka::Topic* topic, const std::string* key, int partitions, void* msgOpaque) override {
     return partitioner_(*topic, *key, partitions, msgOpaque);
+  }
+
+  // TODO(yunjing): find a better way to inject this. We could inject it via the config object, but our current
+  // implementation of bootstrap process does not take a handler function pointer.
+  void setDeliveryHandler(DeliveryHandler handler) {
+    deliveryHandler_ = handler;
   }
 
   // produceAsync is a more friendly and more restricted async producer API
@@ -124,8 +130,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
     }
   }
 
-  // Give event callbacks a chance to run. This should be called at regular intervals
-  void pollEventCallbacks() {
+  // Give callbacks (e.g., event and delivery) a chance to run. This should be called at regular intervals
+  void pollCallbacks() {
     producer_->poll(0);
   }
 
@@ -147,8 +153,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
   const std::string topicStr_;
   const int partition_;
   const Partitioner partitioner_;
-  const DeliveryHandler deliveryHandler_;
   const bool useCompression_;
+  DeliveryHandler deliveryHandler_;
   std::unique_ptr<RdKafka::Conf> conf_;
   std::unique_ptr<RdKafka::Conf> topicConf_;
   std::unique_ptr<RdKafka::Producer> producer_;

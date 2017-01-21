@@ -28,32 +28,25 @@ namespace pipeline {
 // RedisPipelineBootstrap is a template for launching RedisPipeline-based services in a main function
 class RedisPipelineBootstrap {
  public:
-  // Defines a list of optional components that a RedisPipeline may use
-  struct OptionalComponents {
-    std::shared_ptr<DatabaseManager> databaseManager;
-    std::unordered_map<std::string, std::shared_ptr<infra::kafka::Producer>> kafkaProducers;
-    std::shared_ptr<infra::ScheduledTaskQueue> scheduledTaskQueue;
-    std::shared_ptr<infra::kafka::ConsumerHelper> kafkaConsumerHelper;
-  };
-
-  // A factory that create a RedisHandler with the given OptionalComponents
-  using RedisHandlerFactory = std::shared_ptr<RedisHandler> (*)(const OptionalComponents&);
+  // A factory that create a RedisHandler with optional components from RedisPipelineBootstrap
+  using RedisHandlerFactory = std::shared_ptr<RedisHandler> (*)(RedisPipelineBootstrap*);
 
   // A factory that creates a kafka consumer
-  using KafkaConsumerFactory = std::shared_ptr<infra::kafka::AbstractConsumer> (*)(
-      const std::string&, const KafkaConsumerConfig&, const std::string&, std::shared_ptr<DatabaseManager>,
-      std::shared_ptr<infra::kafka::ConsumerHelper>, std::shared_ptr<infra::ScheduledTaskQueue>);
+  using KafkaConsumerFactory = std::shared_ptr<infra::kafka::AbstractConsumer> (*)(const std::string&,
+                                                                                   const KafkaConsumerConfig&,
+                                                                                   const std::string&,
+                                                                                   RedisPipelineBootstrap*);
   // Map kafka consumer config keys to consumer factories
   using KafkaConsumerFactoryMap = std::unordered_map<std::string, KafkaConsumerFactory>;
 
   // A factory that creates a database manager with a provided RocksDB column families and db instance
-  using DatabaseManagerFactory = std::shared_ptr<DatabaseManager> (*)(
-    const DatabaseManager::ColumnFamilyMap&, bool masterReplica, rocksdb::DB*);
+  using DatabaseManagerFactory = std::shared_ptr<DatabaseManager> (*)(const DatabaseManager::ColumnFamilyMap&,
+                                                                      bool masterReplica, rocksdb::DB*,
+                                                                      RedisPipelineBootstrap*);
 
   // A factory that creates a ScheduledTaskProcessor instance with a provided database manager
-  using ScheduledTaskProcessorFactory = std::shared_ptr<infra::ScheduledTaskProcessor> (*)(
-      std::shared_ptr<DatabaseManager>,
-      std::unordered_map<std::string, std::shared_ptr<infra::kafka::Producer>>&);
+  using ScheduledTaskProcessorFactory =
+      std::shared_ptr<infra::ScheduledTaskProcessor> (*)(RedisPipelineBootstrap*);
 
   // Function to configure a column family in RocksDB, given a defaultBlockCacheSizeMb
   using RocksDbConfigurator = void (*)(int, rocksdb::ColumnFamilyOptions*);
@@ -63,14 +56,14 @@ class RedisPipelineBootstrap {
   // A RedisHandlerBuilder that creates handler instances using the given factory method
   class DefaultRedisHandlerBuilder : public RedisHandlerBuilder {
    public:
-    DefaultRedisHandlerBuilder(RedisHandlerFactory redisHandlerFactory, OptionalComponents optionalComponents,
-                               bool singletonHandler)
+    DefaultRedisHandlerBuilder(RedisHandlerFactory redisHandlerFactory, bool singletonHandler,
+                               RedisPipelineBootstrap* bootstrap)
         : redisHandlerFactory_(redisHandlerFactory),
-          optionalComponents_(optionalComponents),
-          singletonHandler_(singletonHandler) {
+          singletonHandler_(singletonHandler),
+          bootstrap_(bootstrap) {
       if (singletonHandler) {
         // No race condition here since the constructor is only called in a single thread running bootstrap
-        handler_ = redisHandlerFactory(optionalComponents);
+        handler_ = redisHandlerFactory(bootstrap);
         CHECK_NOTNULL(handler_.get());
       }
     }
@@ -79,14 +72,14 @@ class RedisPipelineBootstrap {
       if (singletonHandler_) {
         return handler_;
       } else {
-        return redisHandlerFactory_(optionalComponents_);
+        return redisHandlerFactory_(bootstrap_);
       }
     }
 
    private:
     RedisHandlerFactory redisHandlerFactory_;
-    OptionalComponents optionalComponents_;
     bool singletonHandler_;
+    RedisPipelineBootstrap* bootstrap_;
     std::shared_ptr<RedisHandler> handler_;
   };
 
@@ -139,6 +132,24 @@ class RedisPipelineBootstrap {
       std::string topic, infra::kafka::Producer::Config = infra::kafka::Producer::Config());
 
   ~RedisPipelineBootstrap() {}
+
+  // Getter methods for optional components.
+  std::shared_ptr<pipeline::DatabaseManager> getDatabaseManager() const {
+    CHECK_NOTNULL(databaseManager_.get());
+    return databaseManager_;
+  }
+  std::shared_ptr<infra::kafka::ConsumerHelper> getKafkaConsumerHelper() const {
+    CHECK_NOTNULL(kafkaConsumerHelper_.get());
+    return kafkaConsumerHelper_;
+  }
+  std::shared_ptr<infra::ScheduledTaskQueue> getScheduledTaskQueue() const {
+    CHECK_NOTNULL(scheduledTaskQueue_.get());
+    return scheduledTaskQueue_;
+  }
+  std::shared_ptr<infra::kafka::Producer> getKafkaProducer(const std::string& name) const {
+    auto it = kafkaProducers_.find(name);
+    return it == kafkaProducers_.end() ? std::shared_ptr<infra::kafka::Producer>() : it->second;
+  }
 
   void initializeRocksDb(const std::string& dbPath, int parallelism, int blockCacheSizeMb, bool createIfMissing,
                          bool createIfMissingOneOff, int64_t versionMimestampMs);

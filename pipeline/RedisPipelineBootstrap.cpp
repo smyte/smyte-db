@@ -258,7 +258,7 @@ void RedisPipelineBootstrap::optimizeBlockedBasedTable() {
 void RedisPipelineBootstrap::initializeDatabaseManager(bool masterReplica) {
   CHECK_NOTNULL(rocksDb_);
   if (config_.databaseManagerFactory) {
-    databaseManager_ = config_.databaseManagerFactory(columnFamilyMap_, masterReplica, rocksDb_);
+    databaseManager_ = config_.databaseManagerFactory(columnFamilyMap_, masterReplica, rocksDb_, this);
   } else {
     databaseManager_ = std::make_shared<DatabaseManager>(columnFamilyMap_, masterReplica, rocksDb_);
   }
@@ -288,8 +288,8 @@ void RedisPipelineBootstrap::initializeScheduledTaskQueue() {
   if (config_.scheduledTaskProcessorFactory) {
     CHECK_NOTNULL(databaseManager_.get());
     rocksdb::ColumnFamilyHandle* columnFamily = getColumnFamily(infra::ScheduledTaskQueue::columnFamilyName());
-    scheduledTaskQueue_ = std::make_shared<infra::ScheduledTaskQueue>(
-        config_.scheduledTaskProcessorFactory(databaseManager_, kafkaProducers_), databaseManager_, columnFamily);
+    scheduledTaskQueue_ = std::make_shared<infra::ScheduledTaskQueue>(config_.scheduledTaskProcessorFactory(this),
+                                                                      databaseManager_, columnFamily);
   }
 }
 
@@ -340,8 +340,7 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
 
     LOG(INFO) << "Launching kafka consumer for partition " << config.partition << " of " << config.topic << " as "
               << config.groupId;
-    kafkaConsumers_.push_back(
-        factory(brokerList, config, offsetKey, databaseManager_, kafkaConsumerHelper_, scheduledTaskQueue_));
+    kafkaConsumers_.push_back(factory(brokerList, config, offsetKey, this));
   }
 }
 
@@ -349,19 +348,14 @@ void RedisPipelineBootstrap::launchServer(int port) {
   LOG(INFO) << "Launching server on port " << port;
   server_ = new wangle::ServerBootstrap<RedisPipeline>();
 
-  // wire optional components
-  OptionalComponents optionalComponents = {};
+  // Check the existence of dependencies based on configuration
   CHECK_NOTNULL(databaseManager_.get());
-  optionalComponents.databaseManager = databaseManager_;
-  optionalComponents.kafkaProducers = kafkaProducers_;
-  optionalComponents.kafkaConsumerHelper = kafkaConsumerHelper_;
   if (config_.scheduledTaskProcessorFactory) {
     CHECK_NOTNULL(scheduledTaskQueue_.get());
-    optionalComponents.scheduledTaskQueue = scheduledTaskQueue_;
   }
 
   server_->childPipeline(std::make_shared<pipeline::RedisPipelineFactory>(std::make_shared<DefaultRedisHandlerBuilder>(
-      config_.redisHandlerFactory, optionalComponents, config_.singletonRedisHandler)));
+      config_.redisHandlerFactory, config_.singletonRedisHandler, this)));
 
   server_->bind(port);
   server_->waitForStop();
@@ -401,8 +395,8 @@ int main(int argc, char** argv) {
   // initialize optional components
   // NOTE: order matters here because both the database manager and kafka producers maybe used by other components to
   // write data, so they should be initialized first
-  redisPipelineBootstrap->initializeDatabaseManager(FLAGS_master_replica);
   redisPipelineBootstrap->initializeKafkaProducers(FLAGS_kafka_broker_list, FLAGS_kafka_producer_configs);
+  redisPipelineBootstrap->initializeDatabaseManager(FLAGS_master_replica);
   redisPipelineBootstrap->initializeScheduledTaskQueue();
   redisPipelineBootstrap->initializeKafkaConsumer(FLAGS_kafka_broker_list, FLAGS_kafka_consumer_configs,
                                                   FLAGS_version_timestamp_ms);
