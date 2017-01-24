@@ -9,12 +9,6 @@
 #include <string>
 #include <utility>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include "avro/Decoder.hh"
-#include "avro/Specific.hh"
-#include "avro/Stream.hh"
-#pragma GCC diagnostic pop
 #include "folly/Conv.h"
 #include "folly/Format.h"
 #include "folly/Range.h"
@@ -73,16 +67,6 @@ class ConsumerHelper {
       return false;
     }
     return true;
-  }
-
-  // Decode an avro record, which is a common wire format used by consumers
-  template <typename T>
-  static void decodeAvroPayload(const void* payload, size_t size, T* record) {
-    auto input = std::unique_ptr<avro::InputStream>(
-        avro::memoryInputStream(static_cast<const uint8_t*>(payload), size).release());
-    avro::DecoderPtr decoder = avro::binaryDecoder();
-    decoder->init(*input);
-    avro::decode(*decoder, *record);
   }
 
   ConsumerHelper(rocksdb::DB* db, rocksdb::ColumnFamilyHandle* smyteMetadataCfHandle)

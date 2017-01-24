@@ -108,3 +108,16 @@ cc_test(
         "-std=c++14"
     ],
 )
+
+cc_library(
+    name = "avro_helper",
+    hdrs = [
+        "AvroHelper.h"
+    ],
+    deps = [
+        "//external:avro",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+)
