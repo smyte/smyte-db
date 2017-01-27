@@ -42,9 +42,15 @@ KafkaConsumerConfig KafkaConsumerConfig::createFromJson(const folly::dynamic& co
     objectStoreObjectNamePrefix = config["object_store_object_name_prefix"].getString();
   }
 
+  // optional configs to control consumer behavior
+  bool lowLatency = false;  // whether to use low latency mode, at the cost of throughput
+  if (config.get_ptr("low_latency")) {
+    lowLatency = config["low_latency"].getBool();
+  }
+
   return KafkaConsumerConfig(std::move(consumerName), std::move(topic), partition, std::move(groupId),
                              std::move(offsetKeySuffix), consumeFromBeginningOneOff, initialOffsetOneOff,
-                             objectStoreBucketName, objectStoreObjectNamePrefix);
+                             objectStoreBucketName, objectStoreObjectNamePrefix, lowLatency);
 }
 
 }  // namespace pipeline

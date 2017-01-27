@@ -34,6 +34,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
     Partitioner partitioner = nullptr;
     // Compress kafka messages by default
     bool useCompression = true;
+    // Prioritize throughput by default
+    bool lowLatency = false;
   };
 
   Producer(const std::string& brokerList, const std::string& topicStr, Config config)
@@ -42,6 +44,7 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
         partition_(config.partition),
         partitioner_(config.partitioner),
         useCompression_(config.useCompression),
+        lowLatency_(config.lowLatency),
         deliveryHandler_(config.deliveryHandler),
         conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL)),
         topicConf_(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC)) {
@@ -131,8 +134,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
   }
 
   // Give callbacks (e.g., event and delivery) a chance to run. This should be called at regular intervals
-  void pollCallbacks() {
-    producer_->poll(0);
+  void pollCallbacks(int timeout = 0) {
+    producer_->poll(timeout);
   }
 
   bool isPartitionAssigned() const {
@@ -154,6 +157,7 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
   const int partition_;
   const Partitioner partitioner_;
   const bool useCompression_;
+  const bool lowLatency_;
   DeliveryHandler deliveryHandler_;
   std::unique_ptr<RdKafka::Conf> conf_;
   std::unique_ptr<RdKafka::Conf> topicConf_;

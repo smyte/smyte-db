@@ -39,7 +39,7 @@ class Consumer : public infra::kafka::AbstractConsumer {
            const std::string& topic, int partition, const std::string& groupId, const std::string& offsetKey,
            std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper,
            std::shared_ptr<platform::gcloud::GoogleCloudStorage> gcs)
-      : infra::kafka::AbstractConsumer(offsetKey, consumerHelper),
+      : infra::kafka::AbstractConsumer(offsetKey, false, consumerHelper),
         brokerList_(brokerList),
         bucketName_(bucketName),
         objectNamePrefix_(objectNamePrefix),

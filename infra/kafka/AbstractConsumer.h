@@ -20,8 +20,13 @@ class AbstractConsumer {
         .count();
   }
 
-  AbstractConsumer(const std::string& offsetKey, std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
+  static constexpr int kDefaultNormalConsumeTimeoutMs = 1000;
+  static constexpr int kDefaultLowLatencyConsumeTimeoutMs = 5;
+
+  AbstractConsumer(const std::string& offsetKey, bool lowLatency,
+                   std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
       : offsetKey_(offsetKey),
+        lowLatency_(lowLatency),
         consumerHelper_(consumerHelper),
         initialized_(false),
         // run_ defaults to true so that client can signal to stop the consumer thread when it's about to start
@@ -35,12 +40,18 @@ class AbstractConsumer {
   // Should panic for any failed verification.
   virtual void init(int64_t initialOffset) = 0;
 
-  // Start the consumer with initial offset and read timeout.
+  // Start the consumer. Using 0 for timeout indicates to use default timeout value.
   // Should NOT panic unless encountered a programming error.
-  virtual void start(int timeoutMs) {
+  virtual void start(int timeoutMs = 0) {
     CHECK(initialized()) << "Consumer has not been initialized";
     // prevent reusing the consumer object
     CHECK(consumerThread_ == nullptr) << "Kafka store consumer thread already started";
+
+    CHECK_GE(timeoutMs, 0);
+    if (timeoutMs == 0) {
+      // Use default timeout
+      timeoutMs = lowLatency_ ? kDefaultLowLatencyConsumeTimeoutMs : kDefaultNormalConsumeTimeoutMs;
+    }
 
     // `this` pointer has a longer lifetime than the consumer thread, so it's okay just pass `this` to the thread
     consumerThread_.reset(new std::thread([this, timeoutMs]() {
@@ -84,6 +95,7 @@ class AbstractConsumer {
 
  private:
   const std::string offsetKey_;
+  const bool lowLatency_;
   std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper_;
   bool initialized_;
   bool run_;

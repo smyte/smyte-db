@@ -62,20 +62,22 @@ DEFINE_string(kafka_broker_list, "localhost:9092", "Kafka broker list");
 //     "consume_from_beginning_one_off": true,
 //     "initial_offset_one_off": 1234,
 //     "object_store_bucket_name": "kafka",
-//     "object_store_object_name_prefix": "raw/"
+//     "object_store_object_name_prefix": "raw/",
+//     "low_latency": true
 //   }
 // ]
-// Note that topic, partition, and group_id are required. The rest are optional.
+// Note that topic, partition, and group_id are required. The rest are optional. By default, low_latency is disabled.
 DEFINE_string(kafka_consumer_configs, "", "Kafka consumer configurations in JSON format");
 // Example for kafka producer configuration:
 // {
 //   "entityList": {
 //     "topic": abcde-entityList,
-//     "partition": 1
+//     "partition": 1,
+//     "low_latency": true
 //   }
 // }
 // Note that the key for each entry is the topic name in production, while the 'topic' field inside a config entry
-// is the full topic name that might contain prefix/suffix for testing purposes
+// is the full topic name that might contain prefix/suffix for testing purposes. By default, low_latency is disabled.
 DEFINE_string(kafka_producer_configs, "", "Kafka producer configurations in JSON format");
 
 // server settings
@@ -279,6 +281,8 @@ void RedisPipelineBootstrap::initializeKafkaProducers(const std::string& brokerL
     infra::kafka::Producer::Config config;
     const folly::dynamic* partition = entry.second.get_ptr("partition");
     if (partition) config.partition = partition->getInt();
+    const folly::dynamic* lowLatency = entry.second.get_ptr("low_latency");
+    if (lowLatency) config.lowLatency = lowLatency->getBool();
     kafkaProducers_[entry.first.getString()] =
         std::make_shared<infra::kafka::Producer>(brokerList, entry.second["topic"].getString(), config);
   }

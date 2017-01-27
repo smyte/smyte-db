@@ -78,7 +78,8 @@ class MockConsumer : public Consumer {
  public:
   MockConsumer(std::string brokerList, std::string topicStr, int partition, MockKafkaTopic* kafkaTopic,
                MockKafkaConsumer* kafkaConsumer)
-      : infra::kafka::Consumer(brokerList, topicStr, partition, "infra-kafka-consumer-test", "test-key", nullptr),
+      : infra::kafka::Consumer(brokerList, topicStr, partition, "infra-kafka-consumer-test", "test-key", false,
+                               nullptr),
         kafkaTopic_(kafkaTopic),
         kafkaConsumer_(kafkaConsumer) {}
 

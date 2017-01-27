@@ -18,6 +18,7 @@ TEST(KafkaConsumerConfig, CreateFromJsonDefaultOptionalFields) {
   EXPECT_TRUE(RdKafka::Topic::OFFSET_INVALID == config.initialOffsetOneOff);
   EXPECT_TRUE(config.objectStoreBucketName.empty());
   EXPECT_TRUE(config.objectStoreObjectNamePrefix.empty());
+  EXPECT_FALSE(config.lowLatency);
 }
 
 TEST(KafkaConsumerConfig, CreateFromJsonConflictingOffsets) {
@@ -42,12 +43,14 @@ TEST(KafkaConsumerConfig, CreateFromJsonOptionalFields) {
       ("offset_key_suffix", "day")
       ("initial_offset_one_off", 123)
       ("object_store_bucket_name", "kafka")
-      ("object_store_object_name_prefix", "raw/"));
+      ("object_store_object_name_prefix", "raw/")
+      ("low_latency", true));
   EXPECT_EQ("day", config.offsetKeySuffix);
   EXPECT_FALSE(config.consumeFromBeginningOneOff);
   EXPECT_EQ(123L, config.initialOffsetOneOff);
   EXPECT_EQ("kafka", config.objectStoreBucketName);
   EXPECT_EQ("raw/", config.objectStoreObjectNamePrefix);
+  EXPECT_TRUE(config.lowLatency);
 }
 
 }  // namespace pipeline

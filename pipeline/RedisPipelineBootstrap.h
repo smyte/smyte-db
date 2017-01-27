@@ -187,7 +187,7 @@ class RedisPipelineBootstrap {
       consumer->init(RdKafka::Topic::OFFSET_STORED);
     }
     for (auto& consumer : kafkaConsumers_) {
-      consumer->start(1000);
+      consumer->start();
     }
   }
 

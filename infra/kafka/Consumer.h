@@ -18,12 +18,13 @@ namespace kafka {
 class Consumer : public AbstractConsumer, public EventCallback {
  public:
   Consumer(const std::string& brokerList, const std::string& topicStr, int partition, const std::string& groupId,
-           const std::string& offsetKey, std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
-      : AbstractConsumer(offsetKey, consumerHelper),
+           const std::string& offsetKey, bool lowLatency, std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
+      : AbstractConsumer(offsetKey, lowLatency, consumerHelper),
         brokerList_(brokerList),
         topicStr_(topicStr),
         partition_(partition),
         groupId_(groupId),
+        lowLatency_(lowLatency),
         conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL)) {}
 
   virtual ~Consumer() {}
@@ -175,6 +176,7 @@ class Consumer : public AbstractConsumer, public EventCallback {
   const std::string topicStr_;
   const int partition_;
   const std::string groupId_;
+  const bool lowLatency_;
   std::unique_ptr<RdKafka::Conf> conf_;
   std::unique_ptr<RdKafka::KafkaConsumer> consumer_;
 };

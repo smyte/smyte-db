@@ -15,7 +15,7 @@ class KafkaConsumerConfig {
 
   KafkaConsumerConfig(std::string _consumerName, std::string _topic, int _partition, std::string _groupId,
                       std::string _offsetKeySuffix, bool _consumeFromBeginningOneoff, int64_t _initialOffsetOneoff,
-                      std::string _objectStoreBucketName, std::string _objectStoreObjectNamePrefix)
+                      std::string _objectStoreBucketName, std::string _objectStoreObjectNamePrefix, bool _lowLatency)
       : consumerName(std::move(_consumerName)),
         topic(std::move(_topic)),
         partition(_partition),
@@ -24,7 +24,8 @@ class KafkaConsumerConfig {
         consumeFromBeginningOneOff(_consumeFromBeginningOneoff),
         initialOffsetOneOff(_initialOffsetOneoff),
         objectStoreBucketName(_objectStoreBucketName),
-        objectStoreObjectNamePrefix(_objectStoreObjectNamePrefix) {}
+        objectStoreObjectNamePrefix(_objectStoreObjectNamePrefix),
+        lowLatency(_lowLatency) {}
 
   const std::string consumerName;
   const std::string topic;
@@ -35,6 +36,7 @@ class KafkaConsumerConfig {
   const int64_t initialOffsetOneOff;
   const std::string objectStoreBucketName;
   const std::string objectStoreObjectNamePrefix;
+  const bool lowLatency;
 };
 
 }  // namespace pipeline

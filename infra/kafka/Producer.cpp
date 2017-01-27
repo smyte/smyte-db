@@ -30,6 +30,11 @@ void Producer::initialize() {
     LOG(FATAL) << "Setting Kafka delivery report callback failed: " << errstr;
   }
 
+  // Send messages asap in low latency mode
+  if (lowLatency_ && conf_->set("queue.buffering.max.ms", "0", errstr) != RdKafka::Conf::CONF_OK) {
+    LOG(FATAL) << "Setting Kafka queue.buffering.max.ms failed: " << errstr;
+  }
+
   // by default, require messages to be committed by all in sync replica (ISRs)
   if (topicConf_->set("request.required.acks", "-1", errstr) != RdKafka::Conf::CONF_OK) {
     LOG(FATAL) << "Setting request.required.acks for topic ["  << topicStr_ << "] failed: " << errstr;

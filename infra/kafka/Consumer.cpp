@@ -35,6 +35,11 @@ void Consumer::init(int64_t initialOffset) {
   setConf("statistics.interval.ms", "5000");
   // requires 0.10.0.0 kafka broker
   setConf("api.version.request", "true");
+  // whether to use low latency mode at the cost of throughput
+  if (lowLatency_) {
+    setConf("fetch.error.backoff.ms", "5");
+    setConf("fetch.wait.max.ms", "5");
+  }
 
   std::string errstr;
 
