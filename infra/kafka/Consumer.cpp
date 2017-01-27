@@ -33,6 +33,8 @@ void Consumer::init(int64_t initialOffset) {
   setConf("log.connection.close", "false");
   // emit stats every 5 seconds
   setConf("statistics.interval.ms", "5000");
+  // requires 0.10.0.0 kafka broker
+  setConf("api.version.request", "true");
 
   std::string errstr;
 
