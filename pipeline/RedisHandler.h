@@ -103,9 +103,8 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
     CommandHandlerFunc handlerFunc = nullptr;
     int minArgs = 0;
     int maxArgs = 0;
-    bool isSync = true;  // whether return a result synchronously
-    CommandHandler(CommandHandlerFunc _handlerFunc, int _minArgs, int _maxArgs, bool _isSync = true)
-        : handlerFunc(_handlerFunc), minArgs(_minArgs), maxArgs(_maxArgs), isSync(_isSync) {}
+    CommandHandler(CommandHandlerFunc _handlerFunc, int _minArgs, int _maxArgs)
+        : handlerFunc(_handlerFunc), minArgs(_minArgs), maxArgs(_maxArgs) {}
   };
   using CommandHandlerTable = std::unordered_map<std::string, CommandHandler>;
 
@@ -149,8 +148,8 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
     if (validateArgCount(cmd, handlerEntry->second.minArgs, handlerEntry->second.maxArgs)) {
       auto result = (this->*(handlerEntry->second.handlerFunc))(cmd, ctx);
-      // a command may return result at a later time asynchronously
-      if (handlerEntry->second.isSync) {
+      // A sync command writes result directly. An async command may do so at a later time.
+      if (result.type() != codec::RedisValue::Type::kAsyncResult) {
         write(ctx, std::move(result));
       }
     } else {

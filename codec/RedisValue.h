@@ -25,6 +25,7 @@ class RedisValue {
     // special types
     kBulkStringArray,  // it's a common case for kArray
     kNullString,
+    kAsyncResult,  // it's a special type to indicate that the actual result will be generated asynchronously
   };
   static constexpr char kTypeIndicators[] = {
     ':',  // kInteger
@@ -42,6 +43,10 @@ class RedisValue {
 
   static RedisValue emptyListOrSet() {
     return RedisValue(std::vector<RedisValue>{});
+  }
+
+  static RedisValue asyncResult() {
+    return RedisValue(Type::kAsyncResult, "");
   }
 
   static RedisValue smyteIdBinary(int64_t smyteId) {

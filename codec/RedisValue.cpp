@@ -63,6 +63,8 @@ std::string RedisValue::encode() const {
   case Type::kNullString:
     ss << "-1\r\n";
     break;
+  case Type::kAsyncResult:
+    // pass through since it's not intended for encoding
   default:
     LOG(FATAL) << "Unknown RedisValue type: " << int(type());
     break;
