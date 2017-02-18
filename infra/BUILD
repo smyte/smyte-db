@@ -88,6 +88,7 @@ cc_library(
     ],
     deps = [
         "//external:boost",
+        "//external:glog",
     ],
     copts = [
         "-std=c++14"
