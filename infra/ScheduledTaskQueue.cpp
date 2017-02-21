@@ -41,7 +41,7 @@ size_t ScheduledTaskQueue::batchProcessing(int64_t maxTimestampMs) {
   std::vector<ScheduledTask> tasks;
   size_t count = scanPendingTasks(maxTimestampMs, kScanBatchSize, &tasks);
   if (count > 0) {
-    LOG(INFO) << "Found " << count << " pending tasks";
+    DLOG(INFO) << "Found " << count << " pending tasks";
     rocksdb::WriteBatch writeBatch;
     processor_->processPendingTasks(&tasks, &writeBatch);
 
@@ -61,7 +61,7 @@ size_t ScheduledTaskQueue::batchProcessing(int64_t maxTimestampMs) {
       // TODO(yunjing): report the lag of processing pending tasks and repeatedly retried failed tasks
       LOG(WARNING) << tasks.size() - numCompleted << " out of " << tasks.size() << " pending tasks not completed";
     } else {
-      LOG(INFO) << "Completed " << numCompleted << " pending tasks";
+      DLOG(INFO) << "Completed " << numCompleted << " pending tasks";
     }
   }
   return count;
