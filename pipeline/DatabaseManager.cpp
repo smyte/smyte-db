@@ -80,4 +80,6 @@ void DatabaseManager::escapeKeyStr(const std::string& str, std::string* out) {
   out->append(&*last, p - last);
 }
 
+const DatabaseManager::ColumnFamilyGroupMap DatabaseManager::kEmptyColumnFamilyGroupMap = {};
+
 }  // namespace pipeline

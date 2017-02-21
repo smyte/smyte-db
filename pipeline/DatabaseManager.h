@@ -8,6 +8,7 @@
 
 #include "folly/Conv.h"
 #include "glog/logging.h"
+#include "murmurhash3/MurmurHash3.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
@@ -18,6 +19,7 @@ namespace pipeline {
 class DatabaseManager {
  public:
   using ColumnFamilyMap = std::unordered_map<std::string, rocksdb::ColumnFamilyHandle*>;
+  using ColumnFamilyGroupMap = std::unordered_map<std::string, std::vector<rocksdb::ColumnFamilyHandle*>>;
 
   static const char* defaultColumnFamilyName() {
     return "default";
@@ -49,13 +51,30 @@ class DatabaseManager {
     }
   }
 
+  // Shard a string using murmurhash32
+  static int getShardNum(const std::string& shardKey, int shardCount, uint32_t seed = 0) {
+    uint32_t hash = 0;
+    MurmurHash3_x86_32(shardKey.data(), shardKey.size(), seed, &hash);
+    return hash % shardCount;
+  }
+
   // Escape non-printable characters, %, and ~ using percent-encoding for strings to be used as database keys
   static void escapeKeyStr(const std::string& str, std::string* out);
 
   DatabaseManager(const ColumnFamilyMap& columnFamilyMap, bool masterReplica, rocksdb::DB* db)
-      : columnFamilyMap_(columnFamilyMap), masterReplica_(masterReplica), db_(db), metadataColumnFamily_(nullptr) {
-    metadataColumnFamily_ = CHECK_NOTNULL(getColumnFamily(metadataColumnFamilyName()));
-  }
+      : columnFamilyMap_(columnFamilyMap),
+        columnFamilyGroupMap_(kEmptyColumnFamilyGroupMap),
+        masterReplica_(masterReplica),
+        db_(db),
+        metadataColumnFamily_(CHECK_NOTNULL(getColumnFamily(metadataColumnFamilyName()))) {}
+
+  DatabaseManager(const ColumnFamilyMap& columnFamilyMap, const ColumnFamilyGroupMap& columnFamilyGroupMap,
+                  bool masterReplica, rocksdb::DB* db)
+      : columnFamilyMap_(columnFamilyMap),
+        columnFamilyGroupMap_(columnFamilyGroupMap),
+        masterReplica_(masterReplica),
+        db_(db),
+        metadataColumnFamily_(CHECK_NOTNULL(getColumnFamily(metadataColumnFamilyName()))) {}
 
   virtual ~DatabaseManager() {}
 
@@ -71,6 +90,14 @@ class DatabaseManager {
   rocksdb::ColumnFamilyHandle* getColumnFamily(const std::string& columnFamilyName) {
     auto entry = columnFamilyMap().find(columnFamilyName);
     return entry != columnFamilyMap().end() ? entry->second : nullptr;
+  }
+
+  const ColumnFamilyGroupMap& columnFamilyGroupMap() const { return columnFamilyGroupMap_; }
+
+  const std::vector<rocksdb::ColumnFamilyHandle*>& getColumnFamilyGroup(const std::string& name) {
+    auto it = columnFamilyGroupMap().find(name);
+    CHECK(it != columnFamilyGroupMap().end());
+    return it->second;
   }
 
   bool freeze(std::vector<std::string>* fileList);
@@ -104,7 +131,10 @@ class DatabaseManager {
   }
 
  private:
+  static const ColumnFamilyGroupMap kEmptyColumnFamilyGroupMap;
+
   const ColumnFamilyMap& columnFamilyMap_;
+  const ColumnFamilyGroupMap& columnFamilyGroupMap_;
   const bool masterReplica_;
   rocksdb::DB* db_;
   rocksdb::ColumnFamilyHandle* metadataColumnFamily_;

@@ -100,6 +100,7 @@ cc_library(
     deps = [
         "//external:folly",
         "//external:glog",
+        "//external:murmurhash3",
         "//external:rocksdb",
     ],
     copts = [

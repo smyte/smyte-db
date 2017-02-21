@@ -1,6 +1,7 @@
 #ifndef PIPELINE_REDISPIPELINEBOOTSTRAP_H_
 #define PIPELINE_REDISPIPELINEBOOTSTRAP_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -124,6 +125,10 @@ class RedisPipelineBootstrap {
           singletonRedisHandler(_singletonRedisHandler) {}
   };
 
+  static std::string getColumnFamilyNameInGroup(const std::string& groupName, int index) {
+    return folly::sformat("{}-{}", groupName, index);
+  }
+
   // Called by clients to create an instance to configure and start a server
   static std::shared_ptr<RedisPipelineBootstrap> create(Config config);
 
@@ -138,6 +143,9 @@ class RedisPipelineBootstrap {
     CHECK_NOTNULL(databaseManager_.get());
     return databaseManager_;
   }
+  const DatabaseManager::ColumnFamilyGroupMap& getColumnFamilyGroupMap() const {
+    return columnFamilyGroupMap_;
+  }
   std::shared_ptr<infra::kafka::ConsumerHelper> getKafkaConsumerHelper() const {
     CHECK_NOTNULL(kafkaConsumerHelper_.get());
     return kafkaConsumerHelper_;
@@ -151,12 +159,13 @@ class RedisPipelineBootstrap {
     return it == kafkaProducers_.end() ? std::shared_ptr<infra::kafka::Producer>() : it->second;
   }
 
-  void initializeRocksDb(const std::string& dbPath, int parallelism, int blockCacheSizeMb, bool createIfMissing,
-                         bool createIfMissingOneOff, int64_t versionMimestampMs);
+  void initializeRocksDb(const std::string& dbPath, const std::string& cfGroupConfigs,
+                         const std::string& dropCfGroupConfigs, int parallelism, int blockCacheSizeMb,
+                         bool createIfMissing, bool createIfMissingOneOff, int64_t versionMimestampMs);
 
   void stopRocksDb() {
     for (auto& entry : columnFamilyMap_) {
-      delete entry.second;
+      rocksDb_->DestroyColumnFamilyHandle(entry.second);
     }
     delete rocksDb_;
     LOG(INFO) << "RocksDB has shutdown gracefully";
@@ -237,6 +246,19 @@ class RedisPipelineBootstrap {
   }
 
  private:
+  struct RocksDbColumnFamilyGroupConfig {
+    int startShardIndex;
+    int localVirtualShardCount;
+    int shardIndexIncrement;
+
+    RocksDbColumnFamilyGroupConfig(int _startShardIndex, int _localVirtualShardCount, int _shardIndexIncrement)
+        : startShardIndex(_startShardIndex),
+          localVirtualShardCount(_localVirtualShardCount),
+          shardIndexIncrement(_shardIndexIncrement) {}
+  };
+
+  using RocksDbColumnFamilyGroupConfigMap = std::unordered_map<std::string, RocksDbColumnFamilyGroupConfig>;
+
   static constexpr int64_t kMaxVersionTimestampAgeMs = 30 * 60 * 1000;  // 30 minutes
   static constexpr char kVersionTimestampKey[] = "VersionTimestamp";
 
@@ -244,15 +266,23 @@ class RedisPipelineBootstrap {
 
   // Validate if we can apply the one off flags
   bool canApplyOneOffFlags(int64_t versionTimestampMs);
+
   // Update ColumnFamilyOptions with block cache config for RocksDB
   void setRocksDbBlockCache(int blockCacheSizeMb, rocksdb::ColumnFamilyOptions* options);
 
+  // Parse configurations for rocksdb column family groups
+  RocksDbColumnFamilyGroupConfigMap parseRocksDbColumnFamilyGroupConfigs(const std::string& configs);
+
+  // Process column family group by call the given callback with each column family name in the group in order
+  void processRocksDbColumnFamilyGroup(const std::string& groupName, const RocksDbColumnFamilyGroupConfig& groupConfig,
+                                       std::function<void(const std::string&)> callback);
   // Configurations for the RedisPipeline
   Config config_;
 
   // rocksdb pointers here are raw pointers since we want to deleted them explicitly for graceful shutdown
   rocksdb::DB* rocksDb_;
   DatabaseManager::ColumnFamilyMap columnFamilyMap_;
+  DatabaseManager::ColumnFamilyGroupMap columnFamilyGroupMap_;
   std::unordered_map<std::string, rocksdb::ColumnFamilyOptions> columnFamilyOptionsMap_;
 
   // optional components

@@ -48,6 +48,16 @@ DEFINE_bool(rocksdb_create_if_missing_one_off, false, "Create database when miss
 // Convenience parameter to bootstrap the database without checking version_timestamp_ms
 // NOTE: prefer the `_one_off` version in production
 DEFINE_bool(rocksdb_create_if_missing, false, "Create database when missing without checking version_timestamp_ms");
+// Create column families in groups for virtual sharding, e.g.,
+// {
+//    "node-to-smyte": {
+//      "start_shard_index": 1,
+//      "local_virtual_shard_count": 64,
+//      "shard_index_increment": 16
+//    }
+///}
+DEFINE_string(rocksdb_cf_group_configs, "{}", "RocksDB column family group configurations");
+DEFINE_string(rocksdb_drop_cf_group_configs, "{}", "Same as rocksdb_cf_group_configs but specify the ones to drop");
 
 // kafka flags
 DEFINE_string(kafka_broker_list, "localhost:9092", "Kafka broker list");
@@ -134,8 +144,18 @@ void RedisPipelineBootstrap::persistVersionTimestamp(int64_t versionTimestampMs)
   }
 }
 
-void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, int parallelism, int blockCacheSizeMb,
-                                               bool createIfMissing, bool createIfMissingOneOff,
+void RedisPipelineBootstrap::processRocksDbColumnFamilyGroup(const std::string& groupName,
+                                                             const RocksDbColumnFamilyGroupConfig& groupConfig,
+                                                             std::function<void(const std::string&)> callback) {
+  for (int i = 0; i < groupConfig.localVirtualShardCount; i++) {
+    int shardNumber = groupConfig.startShardIndex + i * groupConfig.shardIndexIncrement;
+    callback(getColumnFamilyNameInGroup(groupName, shardNumber));
+  }
+}
+
+void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const std::string& cfGroupConfigs,
+                                               const std::string& dropCfGroupConfigs, int parallelism,
+                                               int blockCacheSizeMb, bool createIfMissing, bool createIfMissingOneOff,
                                                int64_t versionTimestampMs) {
   rocksdb::Options options;
   // Optimize RocksDB
@@ -156,11 +176,31 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, int pa
   // the expected sst file size is 64MB by default, so 1500 open files could address up to 96G data
   options.max_open_files = 1500;
 
+  auto cfGroupConfigMap = parseRocksDbColumnFamilyGroupConfigs(cfGroupConfigs);
+  auto dropCfGroupConfigMap = parseRocksDbColumnFamilyGroupConfigs(dropCfGroupConfigs);
+  std::unordered_map<std::string, rocksdb::ColumnFamilyOptions> dropColumnFamilyOptionsMap;
   // Allow different services to customize column family configurations
   for (const auto& entry : config_.rocksDbConfiguratorMap) {
     rocksdb::ColumnFamilyOptions columnFamilyOptions(options);
     entry.second(blockCacheSizeMb, &columnFamilyOptions);
-    columnFamilyOptionsMap_[entry.first] = columnFamilyOptions;
+    const auto groupConfigIt = cfGroupConfigMap.find(entry.first);
+    if (groupConfigIt == cfGroupConfigMap.end()) {
+      // the configurator defines a single column family
+      columnFamilyOptionsMap_[entry.first] = columnFamilyOptions;
+    } else {
+      // the configurator defines a column family group
+      processRocksDbColumnFamilyGroup(entry.first, groupConfigIt->second, [&](const std::string& cfName) mutable {
+        columnFamilyOptionsMap_[cfName] = columnFamilyOptions;
+      });
+    }
+    // check column families to drop, we also need column family options for these in order to open db correctly
+    const auto dropGroupConfigIt = dropCfGroupConfigMap.find(entry.first);
+    if (dropGroupConfigIt != dropCfGroupConfigMap.end()) {
+      processRocksDbColumnFamilyGroup(entry.first, dropGroupConfigIt->second, [&](const std::string& cfName) mutable {
+        CHECK_EQ(columnFamilyOptionsMap_.count(cfName), 0) << "Cannot drop required column family: " << cfName;
+        dropColumnFamilyOptionsMap[cfName] = columnFamilyOptions;
+      });
+    }
   }
 
   // optimize the required column families using point lookup when not specified by clients
@@ -210,8 +250,15 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, int pa
 
   // prepare descriptors for existing column families
   for (const auto& name : existingColumnFamilies) {
-    CHECK_GT(columnFamilyOptionsMap_.count(name), 0) << "Must define column family options for " << name;
-    columnFamilyDescriptors.emplace_back(name, columnFamilyOptionsMap_[name]);
+    if (columnFamilyOptionsMap_.find(name) != columnFamilyOptionsMap_.end()) {
+      // found a column family to open
+      columnFamilyDescriptors.emplace_back(name, columnFamilyOptionsMap_[name]);
+    } else if (dropColumnFamilyOptionsMap.find(name) != dropColumnFamilyOptionsMap.end()) {
+      // found a column family to drop
+      columnFamilyDescriptors.emplace_back(name, dropColumnFamilyOptionsMap[name]);
+    } else {
+      LOG(FATAL) << "Must define column family options for " << name;
+    }
   }
 
   // open DB
@@ -222,8 +269,6 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, int pa
   for (const auto& entry : columnFamilyOptionsMap_) {
     auto it = find(existingColumnFamilies.cbegin(), existingColumnFamilies.cend(), entry.first);
     if (it == existingColumnFamilies.cend()) {
-      CHECK_GT(columnFamilyOptionsMap_.count(entry.first), 0) << "Must define column family options for "
-                                                              << entry.first;
       rocksdb::ColumnFamilyHandle* cf;
       rocksdb::Status s = rocksDb_->CreateColumnFamily(columnFamilyOptionsMap_[entry.first], entry.first, &cf);
       CHECK(s.ok()) << "Creating column family `" << entry.first << "` failed: " << s.ToString();
@@ -237,12 +282,61 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, int pa
     columnFamilyMap_[cf->GetName()] = cf;
   }
 
+  // Drop unused column families created by old column family group configs
+  for (const auto& entry : dropColumnFamilyOptionsMap) {
+    auto it = columnFamilyMap_.find(entry.first);
+    if (it != columnFamilyMap_.end()) {
+      LOG(INFO) << "Dropping column family: " << entry.first;
+      rocksDb_->DropColumnFamily(it->second);
+      rocksDb_->DestroyColumnFamilyHandle(it->second);
+      columnFamilyMap_.erase(it);
+    } else {
+      LOG(ERROR) << "Column family to drop does not exist: " << entry.first;
+    }
+  }
+
+  // Map from name to column family groups
+  for (const auto& entry : cfGroupConfigMap) {
+    std::vector<rocksdb::ColumnFamilyHandle*> group;
+    processRocksDbColumnFamilyGroup(entry.first, entry.second, [&](const std::string& cfName) mutable {
+      auto it = columnFamilyMap_.find(cfName);
+      CHECK(it != columnFamilyMap_.end()) << "Column family not found: " << cfName;
+      group.push_back(it->second);
+    });
+    columnFamilyGroupMap_[entry.first] = std::move(group);
+  }
+
   // make sure the required column families are there
   CHECK_GT(columnFamilyMap_.count(DatabaseManager::defaultColumnFamilyName()), 0);
   CHECK_GT(columnFamilyMap_.count(DatabaseManager::metadataColumnFamilyName()), 0);
   for (const auto& entry : config_.rocksDbConfiguratorMap) {
-    CHECK_GT(columnFamilyMap_.count(entry.first), 0);
+    const auto groupConfigIt = cfGroupConfigMap.find(entry.first);
+    if (groupConfigIt == cfGroupConfigMap.end()) {
+      CHECK_GT(columnFamilyMap_.count(entry.first), 0);
+    } else {
+      processRocksDbColumnFamilyGroup(entry.first, groupConfigIt->second, [&](const std::string& cfName) mutable {
+        CHECK_GT(columnFamilyMap_.count(cfName), 0);
+      });
+    }
   }
+}
+
+RedisPipelineBootstrap::RocksDbColumnFamilyGroupConfigMap RedisPipelineBootstrap::parseRocksDbColumnFamilyGroupConfigs(
+    const std::string& configs) {
+  folly::dynamic configJson = folly::dynamic::object;
+  try {
+    configJson = folly::parseJson(configs);
+  } catch (const std::exception& e) {
+    LOG(FATAL) << "rocksdb column family group configurations must be valid JSON: " << e.what();
+  }
+  RocksDbColumnFamilyGroupConfigMap configMap;
+  for (const auto& entry : configJson.items()) {
+    configMap.insert(std::make_pair(entry.first.getString(),
+                                    RocksDbColumnFamilyGroupConfig(entry.second["start_shard_index"].getInt(),
+                                                                   entry.second["local_virtual_shard_count"].getInt(),
+                                                                   entry.second["shard_index_increment"].getInt())));
+  }
+  return configMap;
 }
 
 void RedisPipelineBootstrap::optimizeBlockedBasedTable() {
@@ -393,7 +487,8 @@ int main(int argc, char** argv) {
   CHECK_EQ(pipeline::DatabaseManager::defaultColumnFamilyName(), rocksdb::kDefaultColumnFamilyName);
 
   LOG(INFO) << "Initializing RedisPipeline";
-  redisPipelineBootstrap->initializeRocksDb(FLAGS_rocksdb_db_path, FLAGS_rocksdb_parallelism,
+  redisPipelineBootstrap->initializeRocksDb(FLAGS_rocksdb_db_path, FLAGS_rocksdb_cf_group_configs,
+                                            FLAGS_rocksdb_drop_cf_group_configs, FLAGS_rocksdb_parallelism,
                                             FLAGS_rocksdb_block_cache_size_mb, FLAGS_rocksdb_create_if_missing,
                                             FLAGS_rocksdb_create_if_missing_one_off, FLAGS_version_timestamp_ms);
   // initialize optional components
