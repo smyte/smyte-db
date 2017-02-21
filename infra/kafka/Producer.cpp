@@ -31,8 +31,11 @@ void Producer::initialize() {
   }
 
   // Send messages asap in low latency mode
-  if (lowLatency_ && conf_->set("queue.buffering.max.ms", "0", errstr) != RdKafka::Conf::CONF_OK) {
-    LOG(FATAL) << "Setting Kafka queue.buffering.max.ms failed: " << errstr;
+  if (lowLatency_) {
+    // Use 10ms instead of 0 so that the producer client still has a chance to batch
+    if (conf_->set("queue.buffering.max.ms", "10", errstr) != RdKafka::Conf::CONF_OK) {
+      LOG(FATAL) << "Setting Kafka queue.buffering.max.ms failed: " << errstr;
+    }
   }
 
   // by default, require messages to be committed by all in sync replica (ISRs)
