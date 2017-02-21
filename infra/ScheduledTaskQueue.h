@@ -73,8 +73,8 @@ class ScheduledTaskQueue {
 
     stop();
 
-    if (executionThread_ && executionThread_->joinable()) {
-      executionThread_->joinable();
+    if (executionThread_->joinable()) {
+      executionThread_->join();
     }
 
     LOG(INFO) << "Scheduled tasks execution thread destroyed";
