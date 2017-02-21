@@ -169,7 +169,7 @@ def smyte_workspace(workspace_name):
         url = "https://developers.google.com/resources/api-libraries/download/storage/v1/cpp",
         type = "zip",
         strip_prefix = "storage",
-        sha256 = "adbbb0de54800aa80a45c70bb2759ab773ecd4f064f01ecdd73e7e6d3c51cf2d",
+        sha256 = "2b97bdfeaa6d60cc08ba78e9970e41402d71c45f779c411a289f37db463766ab",
         build_file = workspace_name + "//third_party:google_cloud_storage.BUILD",
     )
     native.bind(
