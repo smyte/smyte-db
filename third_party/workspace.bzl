@@ -299,6 +299,17 @@ def smyte_workspace(workspace_name):
         actual = "@murmurhash3_archive//:murmurhash3",
     )
 
+    #re2
+    native.git_repository(
+        name = "com_googlesource_code_re2",  # match the name defined in its WORKSPACE file
+        remote = "https://github.com/google/re2.git",
+        tag = "2017-01-01",
+    )
+    native.bind(
+        name = "re2",
+        actual = "@com_googlesource_code_re2//:re2",
+    )
+
     # rocksdb
     native.new_git_repository(
         name = "rocksdb_git",
