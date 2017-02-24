@@ -67,8 +67,6 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   void read(Context* ctx, codec::RedisValue req) override;
 
   void readException(Context* ctx, folly::exception_wrapper e) override {
-    // intentionally break monitoring for read timeout so that we don't leave monitoring on forever
-    removeMonitor(ctx);
     std::string address = getPeerAddressPortStr(ctx);
     DLOG(WARNING) << "Read exception: " << exceptionStr(e) << " for " << address;
     try {
@@ -80,13 +78,11 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   }
 
   void readEOF(Context* ctx) override {
-    removeMonitor(ctx);
     DLOG(INFO) << "Connection closed: " << getPeerAddressPortStr(ctx);
     close(ctx);
   }
 
   folly::Future<folly::Unit> writeException(Context* ctx, folly::exception_wrapper e) override {
-    removeMonitor(ctx);
     return ctx->fireWriteException(std::move(e));
   }
 
