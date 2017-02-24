@@ -70,11 +70,9 @@ class RedisPipelineBootstrap {
     }
 
     std::shared_ptr<RedisHandler> newHandler() override {
-      if (singletonHandler_) {
-        return handler_;
-      } else {
-        return redisHandlerFactory_(bootstrap_);
-      }
+      std::shared_ptr<RedisHandler> handler = singletonHandler_ ? handler_ : redisHandlerFactory_(bootstrap_);
+      handler_->connectionOpened();
+      return handler;
     }
 
    private:

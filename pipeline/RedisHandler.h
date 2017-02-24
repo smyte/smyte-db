@@ -1,6 +1,7 @@
 #ifndef PIPELINE_REDISHANDLER_H_
 #define PIPELINE_REDISHANDLER_H_
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <mutex>
@@ -55,6 +56,10 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
         .count();
   }
 
+  static void connectionOpened() { connectionCount_++; }
+  static void connectionClosed() { connectionCount_--; }
+  static size_t getConnectionCount() { return connectionCount_; }
+
   explicit RedisHandler(std::shared_ptr<DatabaseManager> databaseManager)
       : databaseManager_(databaseManager) {}
   virtual ~RedisHandler() {}
@@ -87,6 +92,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
   folly::Future<folly::Unit> close(Context* ctx) override {
     removeMonitor(ctx);
+    connectionClosed();
     return ctx->fireClose();
   }
 
@@ -185,6 +191,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
  private:
   static std::vector<Context*> monitors_;
   static std::mutex monitorMutex_;
+  static std::atomic<size_t> connectionCount_;
 
   codec::RedisValue compactCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue freezeCommand(const std::vector<std::string>& cmd, Context* ctx);

@@ -63,6 +63,10 @@ codec::RedisValue RedisHandler::infoCommand(const std::vector<std::string>& cmd,
 }
 
 void RedisHandler::appendToInfoOutput(std::stringstream* ss) {
+  (*ss) << "# Clients" << std::endl;
+  (*ss) << "connected_clients:" << getConnectionCount() << std::endl;
+  (*ss) << std::endl;
+
   (*ss) << "# RocksDB" << std::endl;
 
   uint64_t value;
@@ -275,6 +279,7 @@ bool RedisHandler::validateArgCount(const std::vector<std::string>& cmd, int min
 
 constexpr char RedisHandler::kWrongNumArgsTemplate[];
 
+std::atomic<size_t> RedisHandler::connectionCount_;
 std::vector<RedisHandler::Context*> RedisHandler::monitors_;
 std::mutex RedisHandler::monitorMutex_;
 
