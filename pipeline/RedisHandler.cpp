@@ -14,6 +14,7 @@
 #include "folly/Format.h"
 #include "folly/String.h"
 #include "glog/logging.h"
+#include "pipeline/BuildVersion.h"
 #include "rocksdb/cache.h"
 #include "rocksdb/db.h"
 #include "rocksdb/statistics.h"
@@ -63,6 +64,12 @@ codec::RedisValue RedisHandler::infoCommand(const std::vector<std::string>& cmd,
 }
 
 void RedisHandler::appendToInfoOutput(std::stringstream* ss) {
+  (*ss) << "# Server" << std::endl;
+  (*ss) << "smyte_build_git_sha:" << kSmyteBuildGitSha << std::endl;
+  (*ss) << "smyte_build_git_time:" << kSmyteBuildGitTime << std::endl;
+  (*ss) << "smyte_build_compile_time:" << kSmyteBuildCompileTime << std::endl;
+  (*ss) << std::endl;
+
   (*ss) << "# Clients" << std::endl;
   (*ss) << "connected_clients:" << getConnectionCount() << std::endl;
   (*ss) << std::endl;

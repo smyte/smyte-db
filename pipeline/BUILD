@@ -40,6 +40,7 @@ cc_library(
         "RedisHandler.h",
     ],
     deps = [
+        ":build_version",
         ":database_manager",
         "//codec:redis_value",
         "//external:boost",
@@ -177,5 +178,18 @@ cc_test(
         "//external:folly",
         "//external:gtest_main",
         "//external:librdkafka",
+    ],
+)
+
+cc_library(
+    name = "build_version",
+    srcs = [
+        "BuildVersion.cpp",
+    ],
+    hdrs = [
+        "BuildVersion.h",
+    ],
+    copts = [
+        "-std=c++14"
     ],
 )
