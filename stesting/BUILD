@@ -10,7 +10,6 @@ cc_library(
     ],
     deps = [
         "//external:boost",
-        "//external:folly",
         "//external:glog",
         "//external:gmock",
         "//external:rocksdb",
