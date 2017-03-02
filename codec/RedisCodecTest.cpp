@@ -162,6 +162,15 @@ TEST(RedisDecoder, Incomplete) {
   EXPECT_EQ(1, needed);  // '\n'
   EXPECT_EQ(input.size(), queue.chainLength());
 
+  input = "*1\r\n$0\r\n";
+  queue.pop_front();
+  queue.clear();
+  queue.append(folly::IOBuf::copyBuffer(input));
+  needed = 0;
+  EXPECT_FALSE(decoder.decode(nullptr, queue, result, needed));
+  EXPECT_EQ(2, needed);   // '\r\n'
+  EXPECT_EQ(input.size(), queue.chainLength());
+
   // data spreads across two buffers
   queue.pop_front();
   queue.clear();
@@ -283,26 +292,6 @@ TEST(RedisDecoder, Invalid) {
   EXPECT_EQ(0, needed);
   EXPECT_EQ(2, queue.chainLength());
 
-  input = "*1\r\n$0\r\n";
-  queue.pop_front();
-  queue.clear();
-  queue.append(folly::IOBuf::copyBuffer(input));
-  needed = 0;
-  EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
-  EXPECT_EQ(2, needed);   // '\r\n'
-  EXPECT_EQ(0, queue.chainLength());
-
-  input = "*1\r\n$0\r\n\r\n";
-  queue.pop_front();
-  queue.clear();
-  queue.append(folly::IOBuf::copyBuffer(input));
-  needed = 0;
-  EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
-  EXPECT_EQ(0, needed);
-  EXPECT_EQ(2, queue.chainLength());
-
   input = "*1\r\n$-1\r\n";
   queue.pop_front();
   queue.clear();
@@ -362,6 +351,16 @@ TEST(RedisDecoder, Valid) {
   EXPECT_EQ("*2\r\n$3\r\nget\r\n$2\r\nab\r\n", result.encode());
   EXPECT_EQ(0, needed);
   EXPECT_EQ(4, queue.chainLength());
+
+  input = "*1\r\n$0\r\n\r\n";
+  queue.pop_front();
+  queue.clear();
+  queue.append(folly::IOBuf::copyBuffer(input));
+  needed = 0;
+  EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
+  EXPECT_EQ(input, result.encode());
+  EXPECT_EQ(2, needed);
+  EXPECT_EQ(0, queue.chainLength());
 }
 
 TEST(RedisEncoder, Encode) {

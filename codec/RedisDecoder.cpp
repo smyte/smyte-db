@@ -74,9 +74,8 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
       return false;
     }
 
-    if (stringLength <= 0) {
-      // -1 means NULL string, 0 means empty string
-      // both are valid values, but server does not know how to handle them
+    if (stringLength < 0) {
+      // -1 means NULL string, which is valid, but server does not know how to handle them
       if (arrayLength < -1) {
         LOG(WARNING) << "-1 is the only valid negative Bulk String length";
       }
@@ -92,7 +91,7 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
       return false;
     }
 
-    strings.emplace_back(curr.readFixedString(stringLength));
+    strings.emplace_back(stringLength > 0 ? curr.readFixedString(stringLength) : "");
 
     // make sure this field terminates with '\r\n'
     if (curr.totalLength() < 2) {
