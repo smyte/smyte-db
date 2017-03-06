@@ -2,22 +2,18 @@ licenses(["notice"])
 
 genrule(
     name = "build_version",
-    srcs = glob(
-        [".git/**/*"],
-    ),
+    srcs = glob([".git/**/*"]) + [
+        "util/build_version.cc.in",
+    ],
     outs = [
         "util/build_version.cc",
     ],
     # `git rev-parse HEAD` returns the SHA, but it does not work in all the environments
     # when combined with bazel sandboxing
     cmd = "GIT_DIR=external/rocksdb_git/.git; " +
-        "GIT_SHA=$$(cat $$GIT_DIR/HEAD | cut -d ' ' -f 2 | xargs -I {} cat $$GIT_DIR/{}); " +
-        "printf '#include \"build_version.h\"\n' >$(@); " +
-        "printf 'const char* rocksdb_build_git_sha = ' >>$(@); " +
-        "printf '\"rocksdb_build_git_sha:%s\";\n' $$GIT_SHA >>$(@); " +
-        "printf 'const char* rocksdb_build_git_date = ' >>$(@); " +
-        "printf '\"rocksdb_build_git_date:%s\";\n' $$(date +%D) >>$(@); " +
-        "printf 'const char* rocksdb_build_compile_date = __DATE__;' >>$(@);",
+        "GIT_SHA=$$(cat $$GIT_DIR/HEAD | cut -d \" \" -f 2 | xargs -I {} cat $$GIT_DIR/{}); " +
+        "sed -e s/@@GIT_SHA@@/$$GIT_SHA/ -e s/@@GIT_DATE_TIME@@/$$(date +%F)/ " +
+        "external/rocksdb_git/util/build_version.cc.in >> $(@)",
 )
 
 cc_library(
@@ -184,6 +180,7 @@ cc_library(
         "utilities/env_registry.cc",
         "utilities/geodb/geodb_impl.cc",
         "utilities/leveldb_options/leveldb_options.cc",
+        "utilities/lua/rocks_lua_compaction_filter.cc",
         "utilities/memory/memory_util.cc",
         "utilities/merge_operators/put.cc",
         "utilities/merge_operators/max.cc",
@@ -236,6 +233,7 @@ cc_library(
         "-fno-omit-frame-pointer",
         "-momit-leaf-frame-pointer",
         "-pthread",
+        "-Werror",
         "-Wsign-compare",
         "-Wshadow",
         "-Wno-unused-parameter",
