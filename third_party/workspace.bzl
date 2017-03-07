@@ -250,20 +250,19 @@ def smyte_workspace(workspace_name):
     )
 
     # librdkafka
-    native.new_http_archive(
-        name = "librdkafka_archive",
-        url = "https://github.com/edenhill/librdkafka/archive/89ed67f.tar.gz",
-        strip_prefix = "librdkafka-89ed67fabb3da66b6c0ecf7fd704c0e1381348fa",
-        sha256 = "d04a9b53eef924ca99ae2d622b31e8777b09d3ef6042d00653c0ca9a9802a2c8",
+    native.new_git_repository(
+        name = "librdkafka_git",
+        remote = "https://github.com/edenhill/librdkafka",
+        tag = "v0.9.4",
         build_file = workspace_name + "//third_party:librdkafka.BUILD",
     )
     native.bind(
         name = "librdkafka_c",
-        actual = "@librdkafka_archive//:librdkafka_c",
+        actual = "@librdkafka_git//:librdkafka_c",
     )
     native.bind(
         name = "librdkafka",
-        actual = "@librdkafka_archive//:librdkafka",
+        actual = "@librdkafka_git//:librdkafka",
     )
     native.bind(
         name = "librdkafka_config",

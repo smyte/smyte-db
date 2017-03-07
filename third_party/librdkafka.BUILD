@@ -120,6 +120,7 @@ cc_library(
         "-Wsign-compare",
     ],
     linkopts = [
+        "-latomic",
         "-ldl",
         "-lrt",
         "-lpthread",

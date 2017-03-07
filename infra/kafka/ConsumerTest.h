@@ -68,6 +68,8 @@ class MockKafkaConsumer : public RdKafka::KafkaConsumer {
   MOCK_METHOD1(commitAsync, RdKafka::ErrorCode(RdKafka::Message*));
   MOCK_METHOD1(commitSync, RdKafka::ErrorCode(std::vector<RdKafka::TopicPartition*>&));
   MOCK_METHOD1(commitAsync, RdKafka::ErrorCode(const std::vector<RdKafka::TopicPartition*>&));
+  MOCK_METHOD1(commitSync, RdKafka::ErrorCode(RdKafka::OffsetCommitCb*));
+  MOCK_METHOD2(commitSync, RdKafka::ErrorCode(std::vector<RdKafka::TopicPartition*>&, RdKafka::OffsetCommitCb*));
   MOCK_METHOD2(committed, RdKafka::ErrorCode(std::vector<RdKafka::TopicPartition*>&, int));
   MOCK_METHOD1(get_partition_queue, RdKafka::Queue*(const RdKafka::TopicPartition*));
   MOCK_METHOD1(set_log_queue, RdKafka::ErrorCode(RdKafka::Queue*));
