@@ -26,6 +26,7 @@
 #include "rocksdb/statistics.h"
 #include "rocksdb/status.h"
 #include "rocksdb/table.h"
+#include "wangle/acceptor/ServerSocketConfig.h"
 #include "wangle/bootstrap/ServerBootstrap.h"
 
 // commandline flags shared by all services
@@ -39,6 +40,9 @@ DEFINE_int64(version_timestamp_ms, -1, "Version timestamp for the one-off flags"
 // though such behavior has to be coded explicitly. By default, the framework only uses this flag to decide where
 // to run the backup script, which is external to the service code.
 DEFINE_bool(master_replica, false, "Is this service replica the master replica");
+
+// socket settings
+DEFINE_int32(connection_idle_timeout_ms, 600000, "Connection idle timeout. 10 minutes by default.");
 
 // rocksdb settings
 DEFINE_string(rocksdb_db_path, "/dev/null", "RocksDB data path");
@@ -442,9 +446,12 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
   }
 }
 
-void RedisPipelineBootstrap::launchServer(int port) {
+void RedisPipelineBootstrap::launchServer(int port, int connectionIdleTimeoutMs) {
   LOG(INFO) << "Launching server on port " << port;
   server_ = new wangle::ServerBootstrap<RedisPipeline>();
+  auto socketConfig = wangle::ServerSocketConfig();
+  socketConfig.connectionIdleTimeout = std::chrono::milliseconds(connectionIdleTimeoutMs);
+  server_->acceptorConfig(socketConfig);
 
   // Check the existence of dependencies based on configuration
   CHECK_NOTNULL(databaseManager_.get());
@@ -506,7 +513,7 @@ int main(int argc, char** argv) {
 
   // start the server with all optional components initialized and started
   // NOTE: launchServer method cannot use any one-off flags
-  redisPipelineBootstrap->launchServer(FLAGS_port);
+  redisPipelineBootstrap->launchServer(FLAGS_port, FLAGS_connection_idle_timeout_ms);
 
   redisPipelineBootstrap->stopOptionalComponents();
   redisPipelineBootstrap->stopRocksDb();

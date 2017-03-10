@@ -220,7 +220,7 @@ class RedisPipelineBootstrap {
   }
 
   // Create server and block on listening
-  void launchServer(int port);
+  void launchServer(int port, int connectionIdleTimeoutMs);
 
   // Stop server
   void stopServer() {
