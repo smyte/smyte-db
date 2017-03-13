@@ -119,7 +119,7 @@ class TestWithRocksDb : public ::testing::Test {
 
   void TearDown() override {
     for (auto& entry : columnFamilyMap_) {
-      delete entry.second;
+      db_->DestroyColumnFamilyHandle(entry.second);
     }
     columnFamilyMap_.clear();
     delete db_;
