@@ -76,6 +76,10 @@ class SmyteId {
     return smyteId_ == rhs.smyteId_;
   }
 
+  int64_t timestamp() const {
+    return  (smyteId_ >> (SmyteId::kUniqueBits +  SmyteId::kMachineBits)) + SmyteId::kTimestampEpoch;
+  }
+
  private:
   int64_t smyteId_;
 };
