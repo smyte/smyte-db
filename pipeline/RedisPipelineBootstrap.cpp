@@ -184,7 +184,7 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const 
   auto dropCfGroupConfigMap = parseRocksDbColumnFamilyGroupConfigs(dropCfGroupConfigs);
   std::unordered_map<std::string, rocksdb::ColumnFamilyOptions> dropColumnFamilyOptionsMap;
   // Allow different services to customize column family configurations
-  for (const auto& entry : config_.rocksDbConfiguratorMap) {
+  for (const auto& entry : config_.rocksDbCfConfiguratorMap) {
     rocksdb::ColumnFamilyOptions columnFamilyOptions(options);
     entry.second(blockCacheSizeMb, &columnFamilyOptions);
     const auto groupConfigIt = cfGroupConfigMap.find(entry.first);
@@ -313,7 +313,7 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const 
   // make sure the required column families are there
   CHECK_GT(columnFamilyMap_.count(DatabaseManager::defaultColumnFamilyName()), 0);
   CHECK_GT(columnFamilyMap_.count(DatabaseManager::metadataColumnFamilyName()), 0);
-  for (const auto& entry : config_.rocksDbConfiguratorMap) {
+  for (const auto& entry : config_.rocksDbCfConfiguratorMap) {
     const auto groupConfigIt = cfGroupConfigMap.find(entry.first);
     if (groupConfigIt == cfGroupConfigMap.end()) {
       CHECK_GT(columnFamilyMap_.count(entry.first), 0);

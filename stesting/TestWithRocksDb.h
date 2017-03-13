@@ -23,9 +23,9 @@ namespace stesting {
 class TestWithRocksDb : public ::testing::Test {
  protected:
   // Function to configure a column family in RocksDB, given a defaultBlockCacheSizeMb
-  using RocksDbConfigurator = void (*)(int, rocksdb::ColumnFamilyOptions*);
-  // Map column family names to RocksDbConfigurators
-  using RocksDbConfiguratorMap = std::unordered_map<std::string, RocksDbConfigurator>;
+  using RocksDbCfConfigurator = void (*)(int, rocksdb::ColumnFamilyOptions*);
+  // Map column family names to RocksDbCfConfigurators
+  using RocksDbCfConfiguratorMap = std::unordered_map<std::string, RocksDbCfConfigurator>;
   // Map column family group name to group count
   using RocksDbCfGroupConfigMap = std::unordered_map<std::string, size_t>;
 
@@ -48,10 +48,10 @@ class TestWithRocksDb : public ::testing::Test {
   // Column families named in optionalColumnFamilyNames will either be created with a provided configurator or use a
   // default configuration. Either, they are guaranteed to exist.
   explicit TestWithRocksDb(std::vector<std::string> optionalColumnFamilyNames = {},
-                           RocksDbConfiguratorMap rocksDbConfiguratorMap = RocksDbConfiguratorMap(),
+                           RocksDbCfConfiguratorMap rocksDbCfConfiguratorMap = RocksDbCfConfiguratorMap(),
                            RocksDbCfGroupConfigMap rocksDbCfGroupConfigMap = RocksDbCfGroupConfigMap())
       : columnFamilyNames_(std::move(optionalColumnFamilyNames)),
-        rocksDbConfiguratorMap_(std::move(rocksDbConfiguratorMap)),
+        rocksDbCfConfiguratorMap_(std::move(rocksDbCfConfiguratorMap)),
         rocksDbCfGroupConfigMap_(std::move(rocksDbCfGroupConfigMap)) {
     // add the required column family names
     columnFamilyNames_.emplace_back("default");
@@ -66,9 +66,9 @@ class TestWithRocksDb : public ::testing::Test {
     // options for default column family
     std::vector<rocksdb::ColumnFamilyDescriptor> columnFamilyDescriptors;
     rocksdb::ColumnFamilyOptions defaultColumnFamilyOptions(options);
-    if (rocksDbConfiguratorMap_.count("default") > 0) {
+    if (rocksDbCfConfiguratorMap_.count("default") > 0) {
       // 1MB default cache, it makes no difference for testing really
-      rocksDbConfiguratorMap_["default"](1, &defaultColumnFamilyOptions);
+      rocksDbCfConfiguratorMap_["default"](1, &defaultColumnFamilyOptions);
     }
     columnFamilyDescriptors.emplace_back("default", defaultColumnFamilyOptions);
 
@@ -85,9 +85,9 @@ class TestWithRocksDb : public ::testing::Test {
       if (name == "default") continue;
 
       rocksdb::ColumnFamilyOptions columnFamilyOptions(options);
-      if (rocksDbConfiguratorMap_.count(name) > 0) {
+      if (rocksDbCfConfiguratorMap_.count(name) > 0) {
         // 1MB default cache, it makes no difference for testing really
-        rocksDbConfiguratorMap_[name](1, &columnFamilyOptions);
+        rocksDbCfConfiguratorMap_[name](1, &columnFamilyOptions);
       }
       if (rocksDbCfGroupConfigMap_.count(name) > 0) {
         // create column family group
@@ -180,7 +180,7 @@ class TestWithRocksDb : public ::testing::Test {
 
  private:
   std::vector<std::string> columnFamilyNames_;
-  RocksDbConfiguratorMap rocksDbConfiguratorMap_;
+  RocksDbCfConfiguratorMap rocksDbCfConfiguratorMap_;
   RocksDbCfGroupConfigMap rocksDbCfGroupConfigMap_;
   rocksdb::DB* db_ = nullptr;
   std::shared_ptr<pipeline::DatabaseManager> databaseManager_;

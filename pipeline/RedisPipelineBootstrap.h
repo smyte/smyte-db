@@ -50,9 +50,9 @@ class RedisPipelineBootstrap {
       std::shared_ptr<infra::ScheduledTaskProcessor> (*)(RedisPipelineBootstrap*);
 
   // Function to configure a column family in RocksDB, given a defaultBlockCacheSizeMb
-  using RocksDbConfigurator = void (*)(int, rocksdb::ColumnFamilyOptions*);
-  // Map column family names to RocksDbConfigurators
-  using RocksDbConfiguratorMap = std::unordered_map<std::string, RocksDbConfigurator>;
+  using RocksDbCfConfigurator = void (*)(int, rocksdb::ColumnFamilyOptions*);
+  // Map column family names to RocksDbCfConfigurators
+  using RocksDbCfConfiguratorMap = std::unordered_map<std::string, RocksDbCfConfigurator>;
 
   // A RedisHandlerBuilder that creates handler instances using the given factory method
   class DefaultRedisHandlerBuilder : public RedisHandlerBuilder {
@@ -98,10 +98,10 @@ class RedisPipelineBootstrap {
 
     // Optional
     // The default column family and smyte metadata column family are created and optimized for point lookups, but
-    // their behaviors can be customized by providing corresponding RocksDbConfigurators. Additional column families
+    // their behaviors can be customized by providing corresponding RocksDbCfConfigurators. Additional column families
     // can be created based on the specification of this map. Note that it is not recommended to change the
     // configuration for smyte metadata.
-    RocksDbConfiguratorMap rocksDbConfiguratorMap;
+    RocksDbCfConfiguratorMap rocksDbCfConfiguratorMap;
 
     // Optional
     // Indicate whether a singleton RedisHandler instance is sufficient for the pipeline
@@ -113,13 +113,13 @@ class RedisPipelineBootstrap {
            KafkaConsumerFactoryMap _kafkaConsumerFactoryMap = KafkaConsumerFactoryMap(),
            DatabaseManagerFactory _databaseManagerFactory = nullptr,
            ScheduledTaskProcessorFactory _scheduledTaskProcessorFactory = nullptr,
-           RocksDbConfiguratorMap _rocksDbConfiguratorMap = RocksDbConfiguratorMap(),
+           RocksDbCfConfiguratorMap _rocksDbCfConfiguratorMap = RocksDbCfConfiguratorMap(),
            bool _singletonRedisHandler = true)
         : redisHandlerFactory(_redisHandlerFactory),
           kafkaConsumerFactoryMap(_kafkaConsumerFactoryMap),
           databaseManagerFactory(_databaseManagerFactory),
           scheduledTaskProcessorFactory(_scheduledTaskProcessorFactory),
-          rocksDbConfiguratorMap(std::move(_rocksDbConfiguratorMap)),
+          rocksDbCfConfiguratorMap(std::move(_rocksDbCfConfiguratorMap)),
           singletonRedisHandler(_singletonRedisHandler) {}
   };
 
