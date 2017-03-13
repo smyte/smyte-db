@@ -28,6 +28,8 @@ class TestWithRocksDb : public ::testing::Test {
   using RocksDbCfConfiguratorMap = std::unordered_map<std::string, RocksDbCfConfigurator>;
   // Map column family group name to group count
   using RocksDbCfGroupConfigMap = std::unordered_map<std::string, size_t>;
+  // Configuration function for DB-level options
+  using RocksDbConfigurator = void (*)(rocksdb::DBOptions*);
 
   static void SetUpTestCase() {
     static bool initialized = false;
@@ -49,10 +51,12 @@ class TestWithRocksDb : public ::testing::Test {
   // default configuration. Either, they are guaranteed to exist.
   explicit TestWithRocksDb(std::vector<std::string> optionalColumnFamilyNames = {},
                            RocksDbCfConfiguratorMap rocksDbCfConfiguratorMap = RocksDbCfConfiguratorMap(),
-                           RocksDbCfGroupConfigMap rocksDbCfGroupConfigMap = RocksDbCfGroupConfigMap())
+                           RocksDbCfGroupConfigMap rocksDbCfGroupConfigMap = RocksDbCfGroupConfigMap(),
+                           RocksDbConfigurator rocksDbConfigurator = nullptr)
       : columnFamilyNames_(std::move(optionalColumnFamilyNames)),
         rocksDbCfConfiguratorMap_(std::move(rocksDbCfConfiguratorMap)),
-        rocksDbCfGroupConfigMap_(std::move(rocksDbCfGroupConfigMap)) {
+        rocksDbCfGroupConfigMap_(std::move(rocksDbCfGroupConfigMap)),
+        rocksDbConfigurator_(rocksDbConfigurator) {
     // add the required column family names
     columnFamilyNames_.emplace_back("default");
     columnFamilyNames_.emplace_back("smyte-metadata");
@@ -62,6 +66,7 @@ class TestWithRocksDb : public ::testing::Test {
     dbPath_ = boost::filesystem::unique_path("rocksdb_test.%%%%%%%%");
     rocksdb::Options options;
     options.create_if_missing = true;
+    if (rocksDbConfigurator_) rocksDbConfigurator_(&options);
 
     // options for default column family
     std::vector<rocksdb::ColumnFamilyDescriptor> columnFamilyDescriptors;
@@ -182,6 +187,7 @@ class TestWithRocksDb : public ::testing::Test {
   std::vector<std::string> columnFamilyNames_;
   RocksDbCfConfiguratorMap rocksDbCfConfiguratorMap_;
   RocksDbCfGroupConfigMap rocksDbCfGroupConfigMap_;
+  RocksDbConfigurator rocksDbConfigurator_;
   rocksdb::DB* db_ = nullptr;
   std::shared_ptr<pipeline::DatabaseManager> databaseManager_;
   boost::filesystem::path dbPath_;

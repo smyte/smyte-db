@@ -54,6 +54,9 @@ class RedisPipelineBootstrap {
   // Map column family names to RocksDbCfConfigurators
   using RocksDbCfConfiguratorMap = std::unordered_map<std::string, RocksDbCfConfigurator>;
 
+  // Function to configure DB-level options for RocksDB
+  using RocksDbConfigurator = void (*)(rocksdb::DBOptions*);
+
   // A RedisHandlerBuilder that creates handler instances using the given factory method
   class DefaultRedisHandlerBuilder : public RedisHandlerBuilder {
    public:
@@ -104,6 +107,10 @@ class RedisPipelineBootstrap {
     RocksDbCfConfiguratorMap rocksDbCfConfiguratorMap;
 
     // Optional
+    // Allow client code to set DB-level options for RocksDB
+    RocksDbConfigurator rocksDbConfigurator = nullptr;
+
+    // Optional
     // Indicate whether a singleton RedisHandler instance is sufficient for the pipeline
     // It is an optimization for the pipelines that do not save states to the handler instance
     // Most handlers should leave this optional true unless transaction support is need. See counters
@@ -114,12 +121,14 @@ class RedisPipelineBootstrap {
            DatabaseManagerFactory _databaseManagerFactory = nullptr,
            ScheduledTaskProcessorFactory _scheduledTaskProcessorFactory = nullptr,
            RocksDbCfConfiguratorMap _rocksDbCfConfiguratorMap = RocksDbCfConfiguratorMap(),
+           RocksDbConfigurator _rocksDbConfigurator = nullptr,
            bool _singletonRedisHandler = true)
         : redisHandlerFactory(_redisHandlerFactory),
           kafkaConsumerFactoryMap(_kafkaConsumerFactoryMap),
           databaseManagerFactory(_databaseManagerFactory),
           scheduledTaskProcessorFactory(_scheduledTaskProcessorFactory),
           rocksDbCfConfiguratorMap(std::move(_rocksDbCfConfiguratorMap)),
+          rocksDbConfigurator(_rocksDbConfigurator),
           singletonRedisHandler(_singletonRedisHandler) {}
   };
 
