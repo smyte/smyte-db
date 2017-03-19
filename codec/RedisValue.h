@@ -49,10 +49,14 @@ class RedisValue {
     return RedisValue(Type::kAsyncResult, "");
   }
 
+  inline static RedisValue fromLong(int64_t longValue) {
+    boost::endian::big_int64_buf_t value(longValue);
+    return RedisValue(Type::kBulkString, std::string(value.data(), sizeof(int64_t)));
+  }
+
   static RedisValue smyteIdBinary(int64_t smyteId) {
     CHECK(smyteId > 0) << "SmyteId value not in expected range";
-    boost::endian::big_int64_buf_t value(smyteId);
-    return RedisValue(Type::kBulkString, std::string(value.data(), sizeof(int64_t)));
+    return fromLong(smyteId);
   }
 
   RedisValue() : type_(Type::kNullString), data_(0) {}
