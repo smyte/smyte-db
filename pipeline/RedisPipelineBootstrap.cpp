@@ -452,6 +452,7 @@ void RedisPipelineBootstrap::launchServer(int port, int connectionIdleTimeoutMs)
   server_ = new wangle::ServerBootstrap<RedisPipeline>();
   auto socketConfig = wangle::ServerSocketConfig();
   socketConfig.connectionIdleTimeout = std::chrono::milliseconds(connectionIdleTimeoutMs);
+  socketConfig.acceptBacklog = 102400;
   server_->acceptorConfig(socketConfig);
 
   // Check the existence of dependencies based on configuration
