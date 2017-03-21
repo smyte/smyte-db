@@ -166,7 +166,8 @@ class RedisPipelineBootstrap {
     return it == kafkaProducers_.end() ? std::shared_ptr<infra::kafka::Producer>() : it->second;
   }
 
-  void initializeRocksDb(const std::string& dbPath, const std::string& cfGroupConfigs,
+  void initializeRocksDb(const std::string& dbPath, const std::string& dbPaths,
+                         const std::string& cfGroupConfigs,
                          const std::string& dropCfGroupConfigs, int parallelism, int blockCacheSizeMb,
                          bool createIfMissing, bool createIfMissingOneOff, int64_t versionMimestampMs);
 
@@ -276,6 +277,9 @@ class RedisPipelineBootstrap {
 
   // Update ColumnFamilyOptions with block cache config for RocksDB
   void setRocksDbBlockCache(int blockCacheSizeMb, rocksdb::ColumnFamilyOptions* options);
+
+  // Set db_paths from json string
+  void setDbPaths(const std::string& json, rocksdb::Options* options);
 
   // Parse configurations for rocksdb column family groups
   RocksDbColumnFamilyGroupConfigMap parseRocksDbColumnFamilyGroupConfigs(const std::string& configs);

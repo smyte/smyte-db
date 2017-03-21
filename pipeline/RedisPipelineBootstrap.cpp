@@ -35,6 +35,7 @@
 // stored in rocksdb. Only one-off flags with a version newer than stored in db, but also not too old compared to the
 // current timestamp will be applied.
 
+
 DEFINE_int64(version_timestamp_ms, -1, "Version timestamp for the one-off flags");
 // Indicates whether this replica is a master replica. Services may behave differently based on this value,
 // though such behavior has to be coded explicitly. By default, the framework only uses this flag to decide where
@@ -44,8 +45,14 @@ DEFINE_bool(master_replica, false, "Is this service replica the master replica")
 // socket settings
 DEFINE_int32(connection_idle_timeout_ms, 600000, "Connection idle timeout. 10 minutes by default.");
 
+
+
 // rocksdb settings
 DEFINE_string(rocksdb_db_path, "/dev/null", "RocksDB data path");
+
+// eg. [{"/fast": 81920}, {"/slow": 2097152}]
+DEFINE_string(rocksdb_db_paths, "", "RocksDB data paths (sizes in MB)");
+
 DEFINE_int32(rocksdb_parallelism, std::thread::hardware_concurrency(), "Parallelism for flush and compaction");
 DEFINE_int32(rocksdb_block_cache_size_mb, 512, "RocksDB block cache size in MB");
 DEFINE_bool(rocksdb_create_if_missing_one_off, false, "Create database when missing");
@@ -157,7 +164,8 @@ void RedisPipelineBootstrap::processRocksDbColumnFamilyGroup(const std::string& 
   }
 }
 
-void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const std::string& cfGroupConfigs,
+void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const std::string& dbPaths,
+                                               const std::string& cfGroupConfigs,
                                                const std::string& dropCfGroupConfigs, int parallelism,
                                                int blockCacheSizeMb, bool createIfMissing, bool createIfMissingOneOff,
                                                int64_t versionTimestampMs) {
@@ -176,6 +184,11 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const 
   options.IncreaseParallelism(parallelism);
   options.OptimizeLevelStyleCompaction();
   options.statistics = rocksdb::CreateDBStatistics();
+
+  if (!dbPaths.empty()) {
+    setDbPaths(dbPaths, &options);
+  }
+
   // this may hurt performance by helps bound memory usage
   // the expected sst file size is 64MB by default, so 1500 open files could address up to 96G data
   options.max_open_files = 1500;
@@ -344,6 +357,25 @@ RedisPipelineBootstrap::RocksDbColumnFamilyGroupConfigMap RedisPipelineBootstrap
   return configMap;
 }
 
+void RedisPipelineBootstrap::setDbPaths(const std::string& json, rocksdb::Options* options) {
+  folly::dynamic dbPathsJson = folly::dynamic::object;
+  try {
+    dbPathsJson = folly::parseJson(json);
+  } catch (const std::exception& e) {
+    LOG(FATAL) << "rocksdb_db_paths must be valid JSON: " << e.what();
+  }
+
+  for (const auto& obj : dbPathsJson) {
+    for (const auto& pair : obj.items()) {
+      const std::string& dbPath = pair.first.getString();
+      uint64_t dbSize = pair.second.getInt() * 1024 * 1024;
+      LOG(INFO) << "Using db path: " << dbPath << " (" << folly::prettyPrint(dbSize, folly::PRETTY_BYTES) << ")";
+      options->db_paths.emplace_back(dbPath, dbSize);
+    }
+  }
+}
+
+
 void RedisPipelineBootstrap::optimizeBlockedBasedTable() {
   for (const auto& entry : columnFamilyOptionsMap_) {
     std::shared_ptr<rocksdb::TableFactory> tableFactory = entry.second.table_factory;
@@ -496,10 +528,13 @@ int main(int argc, char** argv) {
   CHECK_EQ(pipeline::DatabaseManager::defaultColumnFamilyName(), rocksdb::kDefaultColumnFamilyName);
 
   LOG(INFO) << "Initializing RedisPipeline";
-  redisPipelineBootstrap->initializeRocksDb(FLAGS_rocksdb_db_path, FLAGS_rocksdb_cf_group_configs,
-                                            FLAGS_rocksdb_drop_cf_group_configs, FLAGS_rocksdb_parallelism,
-                                            FLAGS_rocksdb_block_cache_size_mb, FLAGS_rocksdb_create_if_missing,
-                                            FLAGS_rocksdb_create_if_missing_one_off, FLAGS_version_timestamp_ms);
+  redisPipelineBootstrap->initializeRocksDb(FLAGS_rocksdb_db_path, FLAGS_rocksdb_db_paths,
+                                            FLAGS_rocksdb_cf_group_configs, FLAGS_rocksdb_drop_cf_group_configs,
+                                            FLAGS_rocksdb_parallelism, FLAGS_rocksdb_block_cache_size_mb,
+                                            FLAGS_rocksdb_create_if_missing, FLAGS_rocksdb_create_if_missing_one_off,
+                                            FLAGS_version_timestamp_ms);
+
+
   // initialize optional components
   // NOTE: order matters here because both the database manager and kafka producers maybe used by other components to
   // write data, so they should be initialized first
