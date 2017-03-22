@@ -180,14 +180,35 @@ codec::RedisValue RedisHandler::thawCommand(const std::vector<std::string>& cmd,
 }
 
 codec::RedisValue RedisHandler::compactCommand(const std::vector<std::string>& cmd, Context* ctx) {
-  std::string columnFamilyName = cmd.size() > 1 ? cmd[1] : rocksdb::kDefaultColumnFamilyName;
+  int args = cmd.size();
+  std::string columnFamilyName = args > 1 ? cmd[1] : rocksdb::kDefaultColumnFamilyName;
+  if (args == 3) {
+    return errorResp("must specify begin and end keys");
+  }
+
+  std::string keyStart;
+  std::string keyEnd;
+  if (args == 4) {
+    keyStart = cmd[2];
+    keyEnd = cmd[3];
+  }
+
   rocksdb::ColumnFamilyHandle* columnFamily = databaseManager()->getColumnFamily(columnFamilyName);
   if (!columnFamily) {
     return { codec::RedisValue::Type::kError, folly::sformat("Column family not found: {}", columnFamilyName) };
   }
 
   // compaction could take a very long time, don't block the I/O thread
-  std::thread t([this, columnFamily]() { this->databaseManager()->forceCompaction(columnFamily); });
+  std::thread t([this, columnFamily, keyStart, keyEnd, args]() {
+    if (args == 4) {
+      rocksdb::Slice sBegin(keyStart);
+      rocksdb::Slice sEnd(keyEnd);
+
+      this->databaseManager()->forceCompaction(columnFamily, &sBegin, &sEnd);
+    } else {
+      this->databaseManager()->forceCompaction(columnFamily, nullptr, nullptr);
+    }
+  });
   // allow the worker thread to run in background
   t.detach();
 

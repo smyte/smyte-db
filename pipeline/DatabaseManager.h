@@ -111,13 +111,14 @@ class DatabaseManager {
     return true;
   }
 
-  bool forceCompaction(rocksdb::ColumnFamilyHandle* columnFamily) {
+  bool forceCompaction(rocksdb::ColumnFamilyHandle* columnFamily,
+                       rocksdb::Slice* begin, rocksdb::Slice* end) {
     rocksdb::CompactRangeOptions options;
     // allow moving data files back to the minimum level capable of holding the data
     options.change_level = true;
     // make sure all levels are forced to compact
     options.bottommost_level_compaction = rocksdb::BottommostLevelCompaction::kForce;
-    rocksdb::Status status = db_->CompactRange(options, columnFamily, nullptr, nullptr);
+    rocksdb::Status status = db_->CompactRange(options, columnFamily, begin, end);
     if (!status.ok()) {
       LOG(ERROR) << "RocksDB CompactRange Error: " << status.ToString();
       return false;

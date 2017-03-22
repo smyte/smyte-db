@@ -100,7 +100,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   static CommandHandlerTable mergeWithDefaultCommandHandlerTable(const CommandHandlerTable& newTable) {
     CommandHandlerTable baseTable({
       // default command handlers
-      { "compact", { &RedisHandler::compactCommand, 0, 1 } },
+      { "compact", { &RedisHandler::compactCommand, 0, 3 } },
       { "freeze", { &RedisHandler::freezeCommand, 0, 0 } },
       { "getmeta", { &RedisHandler::getMetaCommand, 1, 1 } },
       { "info", { &RedisHandler::infoCommand, 0, 1 } },
