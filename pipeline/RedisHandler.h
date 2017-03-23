@@ -66,27 +66,11 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
   void read(Context* ctx, codec::RedisValue req) override;
 
-  void readException(Context* ctx, folly::exception_wrapper e) override {
-    std::string address = getPeerAddressPortStr(ctx);
-    DLOG(WARNING) << "Read exception: " << exceptionStr(e) << " for " << address;
-    try {
-      ctx->getTransport()->close();
-    } catch (...) {
-      DLOG(ERROR) << "Fail to close socket: " << address;
-    }
-    close(ctx);
-  }
-
-  void readEOF(Context* ctx) override {
-    DLOG(INFO) << "Connection closed: " << getPeerAddressPortStr(ctx);
-    close(ctx);
-  }
-
-  folly::Future<folly::Unit> writeException(Context* ctx, folly::exception_wrapper e) override {
-    return ctx->fireWriteException(std::move(e));
-  }
+  void readEOF(Context* ctx) override { close(ctx); }
+  void readException(Context* ctx, folly::exception_wrapper e) override { close(ctx); }
 
   folly::Future<folly::Unit> close(Context* ctx) override {
+    DLOG(INFO) << "Connection closing";
     removeMonitor(ctx);
     connectionClosed();
     return ctx->fireClose();
