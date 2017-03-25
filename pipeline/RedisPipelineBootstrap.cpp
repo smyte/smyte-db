@@ -190,8 +190,8 @@ void RedisPipelineBootstrap::initializeRocksDb(const std::string& dbPath, const 
   }
 
   // this may hurt performance by helps bound memory usage
-  // the expected sst file size is 64MB by default, so 1500 open files could address up to 96G data
-  options.max_open_files = 1500;
+  // the expected sst file size is 64MB by default, so 200 open files could address up to 128G data
+  options.max_open_files = 2000;
   if (config_.rocksDbConfigurator) config_.rocksDbConfigurator(&options);
 
   auto cfGroupConfigMap = parseRocksDbColumnFamilyGroupConfigs(cfGroupConfigs);
