@@ -57,4 +57,27 @@ TEST(SmyteId, GenerateFromKafkaGoodInput) {
                     (SmyteId::kMachineSize - SmyteId::kVirtualShardCount + 1000)));
 }
 
+TEST(SmyteId, Timestamp) {
+  EXPECT_EQ(SmyteId::generateFromKafka(123, SmyteId::kTimestampEpoch, 789).timestamp(), 1262304000000);
+  EXPECT_EQ(SmyteId::generateFromKafka(123, SmyteId::kTimestampEpoch + 456, 789).timestamp(),
+            SmyteId::kTimestampEpoch + 456);
+}
+
+TEST(SmyteId, Machine) {
+  EXPECT_EQ(SmyteId::generateFromKafka(123, SmyteId::kTimestampEpoch + 456, 0).machine(), 7168);
+  EXPECT_EQ(SmyteId::generateFromKafka(123, SmyteId::kTimestampEpoch + 456, 789).machine(),
+            SmyteId::kMachineBase + 789);
+}
+
+TEST(SmyteId, IsGeneratedFromKafka) {
+  EXPECT_FALSE(SmyteId::generateFromKafka(123, SmyteId::kTimestampEpoch, 789).isGeneratedFromKafka());
+  EXPECT_TRUE(SmyteId::generateFromKafka(123, SmyteId::kKafkaBackedSmyteIdStartMs + 123, 789).isGeneratedFromKafka());
+  auto nowMs =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+          .count();
+  SmyteId smyteId(((((nowMs - SmyteId::kTimestampEpoch) << SmyteId::kUniqueBits) + 123) << SmyteId::kMachineBits) +
+                  1023);
+  EXPECT_FALSE(smyteId.isGeneratedFromKafka());
+}
+
 }  // namespace infra

@@ -29,6 +29,8 @@ class SmyteId {
   static constexpr int kVirtualShardBits = 10;
   static constexpr int kVirtualShardCount = 1L << kVirtualShardBits;
 
+  static constexpr int64_t kKafkaBackedSmyteIdStartMs = 1483228800000;  // 2017-01-01
+
   // Generate a smyte id deterministically from kafka offset, timestamp and virtual shard.
   static SmyteId generateFromKafka(int64_t kafkaOffset, int64_t timestampMs, int virtualShard) {
     int64_t shiftedTimestamp = timestampMs - SmyteId::kTimestampEpoch;
@@ -77,7 +79,15 @@ class SmyteId {
   }
 
   int64_t timestamp() const {
-    return  (smyteId_ >> (SmyteId::kUniqueBits +  SmyteId::kMachineBits)) + SmyteId::kTimestampEpoch;
+    return (smyteId_ >> (SmyteId::kUniqueBits +  SmyteId::kMachineBits)) + SmyteId::kTimestampEpoch;
+  }
+
+  int64_t machine() const {
+    return smyteId_ & (kMachineSize - 1);
+  }
+
+  bool isGeneratedFromKafka() const {
+    return timestamp() >= kKafkaBackedSmyteIdStartMs && machine() >= kMachineBase;
   }
 
  private:
