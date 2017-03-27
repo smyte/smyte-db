@@ -41,6 +41,10 @@ class RedisValue {
     return RedisValue();
   }
 
+  static RedisValue goAway() {
+    return RedisValue(codec::RedisValue::Type::kError, "GOAWAY");
+  }
+
   static RedisValue emptyListOrSet() {
     return RedisValue(std::vector<RedisValue>{});
   }

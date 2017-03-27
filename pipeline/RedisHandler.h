@@ -71,6 +71,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
   folly::Future<folly::Unit> close(Context* ctx) override {
     DLOG(INFO) << "Connection closing";
+    write(ctx, codec::RedisValue::goAway());
     removeMonitor(ctx);
     connectionClosed();
     return ctx->fireClose();
