@@ -109,6 +109,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
       { "ping", { &RedisHandler::pingCommand, 0, 0 } },
       { "select", { &RedisHandler::selectCommand, 1, 1 } },
       { "setmeta", { &RedisHandler::setMetaCommand, 2, 2 } },
+      { "sleep", { &RedisHandler::sleepCommand, 1, 1 } },
       { "thaw", { &RedisHandler::thawCommand, 0, 0 } },
     });
     baseTable.insert(newTable.begin(), newTable.end());
@@ -182,6 +183,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   codec::RedisValue pingCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue selectCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue setMetaCommand(const std::vector<std::string>& cmd, Context* ctx);
+  codec::RedisValue sleepCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue thawCommand(const std::vector<std::string>& cmd, Context* ctx);
 
   void broadcastCmd(const std::vector<std::string>& cmd, Context* ctx);

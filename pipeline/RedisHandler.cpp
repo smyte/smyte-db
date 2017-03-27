@@ -250,6 +250,14 @@ codec::RedisValue RedisHandler::setMetaCommand(const std::vector<std::string>& c
   return errorResp(folly::sformat("RocksDB error: {}", status.ToString()));
 }
 
+codec::RedisValue RedisHandler::sleepCommand(const std::vector<std::string>& cmd, Context* ctx) {
+  int64_t sleepMs;
+  if (!parseInt(cmd[1], &sleepMs)) return errorInvalidInteger();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+  return simpleStringOk();
+}
+
 void RedisHandler::broadcastCmd(const std::vector<std::string>& cmd, Context* ctx) {
   // quickly check if there is any pending monitors before the expensive locking
   if (UNLIKELY(!monitors_.empty())) {
