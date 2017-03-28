@@ -109,6 +109,16 @@ class ConsumerHelper {
     return true;
   }
 
+  bool commitRawKafkaAndFileOffset(const std::string& offsetKey, int64_t kafkaOffset, int64_t fileOffset,
+                                   rocksdb::WriteBatchBase* writeBatch = nullptr) {
+    if (!commitRawOffsetValueWithWriteBatch(offsetKey, encodeKafkaAndFileOffsets(kafkaOffset, fileOffset),
+                                            writeBatch)) {
+      return false;
+    }
+    setLastCommittedOffset(offsetKey, kafkaOffset);
+    return true;
+  }
+
   // Support a new topic/partition pair and return a offset key with the given suffix
   std::string linkTopicPartition(const std::string& topic, int partition, const std::string& offsetKeySuffix) {
     std::string offsetKey = folly::sformat("~kafka-offset~{}~{}~{}", topic, partition, offsetKeySuffix);

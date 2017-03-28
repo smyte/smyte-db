@@ -457,6 +457,8 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
         kafkaConsumerHelper_->linkTopicPartition(config.topic, config.partition, config.offsetKeySuffix);
     if (config.consumeFromBeginningOneOff) {
       if (canApplyOneOffFlags(versionTimestampMs)) {
+        CHECK(config.objectStoreBucketName.empty())
+            << "Only support consume_from_beginning_one_off for regular kafka consumer";
         LOG(WARNING) << "Consume partition " << config.partition << " of " << config.topic
                      << " from beginning as a one-off operation";
         CHECK(kafkaConsumerHelper_->commitRawOffset(offsetKey, RdKafka::Topic::OFFSET_BEGINNING));
@@ -465,7 +467,15 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
       }
     } else if (config.initialOffsetOneOff >= 0) {
       if (canApplyOneOffFlags(versionTimestampMs)) {
-        CHECK(kafkaConsumerHelper_->commitRawOffset(offsetKey, config.initialOffsetOneOff));
+        if (config.objectStoreBucketName.empty()) {
+          // regular kafka consumer
+          CHECK(kafkaConsumerHelper_->commitRawOffset(offsetKey, config.initialOffsetOneOff));
+        } else {
+          // kafka store consumer
+          // NOTE that we hard code file offset as 0 here because we usually start a new kafka store consumer from 0
+          // If that's not the case then kafka offset and file offset won't fit and the DB will fail out loud
+          CHECK(kafkaConsumerHelper_->commitRawKafkaAndFileOffset(offsetKey, config.initialOffsetOneOff, 0L));
+        }
         LOG(WARNING) << "Consume partition " << config.partition << " of " << config.topic << " from "
                      << config.initialOffsetOneOff << " as a one-off operation";
       } else {
