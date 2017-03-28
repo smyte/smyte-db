@@ -68,10 +68,17 @@ void Consumer::init(int64_t initialOffset) {
 
   // download the initial file without retry
   int64_t recordCount = downloadFile(initialFileOffset, false, &currentFilePath_);
-  CHECK(recordCount > 0 && initialFileOffset + recordCount > initialOffset)
-      << "Failed to download or validate object for initial offset " << initialOffset << " and initial file offset "
-      << initialFileOffset;
-  currentDataReader_.reset(new avro::DataFileReader<KafkaStoreMessage>(currentFilePath_.data()));
+  if (recordCount >= 0) {
+    CHECK(initialFileOffset + recordCount > initialOffset)
+        << "Failed to download or validate object for initial offset " << initialOffset << " and initial file offset "
+        << initialFileOffset;
+    currentDataReader_.reset(new avro::DataFileReader<KafkaStoreMessage>(currentFilePath_.data()));
+  } else {
+    // The target file does not exist yet, will retry in the consumer loop
+    recordCount = 0;
+    currentDataReader_.reset(nullptr);
+  }
+
   currentFileOffset_ = initialFileOffset;
   nextFileOffset_ = currentFileOffset_ + recordCount;
   if (initialOffset != initialFileOffset) {
