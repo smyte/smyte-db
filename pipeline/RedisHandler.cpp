@@ -59,6 +59,10 @@ codec::RedisValue RedisHandler::infoCommand(const std::vector<std::string>& cmd,
     }
   } else {
     appendToInfoOutput(&ss);
+    if (consumerHelper_) {
+      ss << std::endl << "# Kafka" << std::endl;
+      consumerHelper_->appendStatsInRedisInfoFormat(&ss);
+    }
   }
   return { codec::RedisValue::Type::kBulkString, ss.str() };
 }
@@ -217,6 +221,23 @@ codec::RedisValue RedisHandler::compactCommand(const std::vector<std::string>& c
 
 codec::RedisValue RedisHandler::pingCommand(const std::vector<std::string>& cmd, Context* ctx) {
   return { codec::RedisValue::Type::kSimpleString, "PONG" };
+}
+
+codec::RedisValue RedisHandler::readyCommand(const std::vector<std::string>& cmd, Context* ctx) {
+  if (consumerHelper_) {
+    // Not ready if lagging
+    return codec::RedisValue(consumerHelper_->isLagging() ? 0 : 1);
+  }
+  // Ready by default, as long as client requests make through
+  return codec::RedisValue(1);
+}
+
+codec::RedisValue RedisHandler::setReadyCommand(const std::vector<std::string>& cmd, Context* ctx) {
+  // SetReady only makes sense when there are kafka consumers
+  if (consumerHelper_) {
+    consumerHelper_->setLagStatus(false);
+  }
+  return simpleStringOk();
 }
 
 codec::RedisValue RedisHandler::selectCommand(const std::vector<std::string>& cmd, Context* ctx) {

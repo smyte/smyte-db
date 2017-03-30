@@ -52,7 +52,10 @@ class Consumer : public infra::kafka::AbstractConsumer {
         currentFileOffset_(0),
         nextFileOffset_(0),
         nextKafkaOffset_(0),
-        offsetManager_(brokerList, topic, partition, groupId) {}
+        offsetManager_(brokerList, topic, partition, groupId) {
+    // Whether a kafka store consumer is lagging is not well defined, so we consider it not lagging by default
+    consumerHelper->setNoLag(offsetKey);
+  }
 
   virtual ~Consumer() {}
 

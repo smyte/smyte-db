@@ -24,7 +24,9 @@ class Consumer : public AbstractConsumer, public EventCallback {
         topicStr_(topicStr),
         partition_(partition),
         groupId_(groupId),
+        offsetKey_(offsetKey),
         lowLatency_(lowLatency),
+        consumerHelper_(consumerHelper),
         conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL)) {}
 
   virtual ~Consumer() {}
@@ -86,6 +88,8 @@ class Consumer : public AbstractConsumer, public EventCallback {
       break;
     case RdKafka::ERR__PARTITION_EOF:
       DLOG(INFO) << "No more messages for partition " << partition_ << " of " << topicStr_;
+      // No longer lagging once we see EOF
+      consumerHelper_->setNoLag(offsetKey_);
       break;
     default:
       LOG(ERROR) << "Consume failed: " << msgWithError.errstr();
@@ -176,7 +180,9 @@ class Consumer : public AbstractConsumer, public EventCallback {
   const std::string topicStr_;
   const int partition_;
   const std::string groupId_;
+  const std::string offsetKey_;
   const bool lowLatency_;
+  std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper_;
   std::unique_ptr<RdKafka::Conf> conf_;
   std::unique_ptr<RdKafka::KafkaConsumer> consumer_;
 };

@@ -132,7 +132,8 @@ TEST_F(ConsumerHelperTest, AppendStatsInRedisInfoFormat) {
            << "kafka_topic_testTopic1_partition_1_lag:15" << std::endl
            << "kafka_topic_testTopic2_partition_0_last_committed_offset:200" << std::endl
            << "kafka_topic_testTopic2_partition_0_high_watermark_offset:230" << std::endl
-           << "kafka_topic_testTopic2_partition_0_lag:30" << std::endl;
+           << "kafka_topic_testTopic2_partition_0_lag:30" << std::endl
+           << "is_any_consumer_lagging:1" << std::endl;
   EXPECT_EQ(expected.str(), actual.str());
 
   // when high watermark offset is smaller (yet to update)
@@ -150,8 +151,26 @@ TEST_F(ConsumerHelperTest, AppendStatsInRedisInfoFormat) {
            << "kafka_topic_testTopic1_partition_1_lag:0" << std::endl
            << "kafka_topic_testTopic2_partition_0_last_committed_offset:200" << std::endl
            << "kafka_topic_testTopic2_partition_0_high_watermark_offset:230" << std::endl
-           << "kafka_topic_testTopic2_partition_0_lag:30" << std::endl;
+           << "kafka_topic_testTopic2_partition_0_lag:30" << std::endl
+           << "is_any_consumer_lagging:1" << std::endl;
   EXPECT_EQ(expected.str(), actual.str());
+}
+
+TEST_F(ConsumerHelperTest, LagStatus) {
+  ConsumerHelper consumerHelper(db(), metadataColumnFamily());
+  const std::string offsetKey1 = consumerHelper.linkTopicPartition("testTopic1", 1, "");
+  const std::string offsetKey2 = consumerHelper.linkTopicPartition("testTopic2", 0, "");
+
+  EXPECT_TRUE(consumerHelper.isLagging());
+  consumerHelper.setNoLag(offsetKey1);
+  EXPECT_TRUE(consumerHelper.isLagging());
+  consumerHelper.setNoLag(offsetKey2);
+  EXPECT_FALSE(consumerHelper.isLagging());
+
+  consumerHelper.setLagStatus(true);
+  EXPECT_TRUE(consumerHelper.isLagging());
+  consumerHelper.setLagStatus(false);
+  EXPECT_FALSE(consumerHelper.isLagging());
 }
 
 }  // namespace kafka

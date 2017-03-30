@@ -74,7 +74,9 @@ class ConsumerHelper {
         smyteMetadataCfHandle_(smyteMetadataCfHandle),
         topicPartitions_({}),
         lastCommittedOffsets_({}),
-        highWatermarkOffsets_({}) {}
+        highWatermarkOffsets_({}),
+        // consider consumers lagging at start up time until they prove otherwise
+        isLagging_(true) {}
 
   // Commit the given kafka offset regardless of its value, i.e., special negative values are allowed
   bool commitRawOffset(const std::string& offsetKey, int64_t kafkaOffset,
@@ -128,6 +130,8 @@ class ConsumerHelper {
     topicPartitions_[offsetKey] = std::make_pair(topic, partition);
     lastCommittedOffsets_[offsetKey] = RdKafka::Topic::OFFSET_INVALID;
     highWatermarkOffsets_[offsetKey] = RdKafka::Topic::OFFSET_INVALID;
+    // consider consumers lagging at start up time until they prove otherwise
+    lagStatuses[offsetKey] = true;
     return offsetKey;
   }
 
@@ -156,6 +160,7 @@ class ConsumerHelper {
       (*ss) << prefix << "high_watermark_offset:" << highWatermarkOffset << std::endl;
       (*ss) << prefix << "lag:" << std::max(0L, highWatermarkOffset - lastCommittedOffset) << std::endl;
     }
+    (*ss) << "is_any_consumer_lagging:" << isLagging() << std::endl;
   }
 
   int64_t getLastCommittedOffset(const std::string& offsetKey) const {
@@ -184,6 +189,38 @@ class ConsumerHelper {
     return offset;
   }
 
+  // Mark the consumer for the given key not lagging
+  void setNoLag(const std::string& offsetKey) {
+    // Currently we only evaluate if consumers are lagging after start up.
+    // Once they caught up, we no longer check it
+    if (!isLagging_) return;
+
+    const auto it = lagStatuses.find(offsetKey);
+    CHECK(it != lagStatuses.end());
+    it->second = false;
+
+    // Need to check if we are still lagging
+    // It may seem like a slow loop but it's not in practice because
+    // a) The total number of entries is small (mostly 1 or 2 and very occasionally 8)
+    // b) It is only evaluated after start up and until everyone catches up
+    for (const auto& entry : lagStatuses) {
+      if (entry.second) {
+        // it is still lagging
+        return;
+      }
+    }
+    // No longer lagging!
+    // NOTE: no mutex needed here because we only ever set it to false and there is write after read
+    isLagging_ = false;
+  }
+
+  // Overwrite the lag status for individual consumers
+  void setLagStatus(bool isLagging) {
+    isLagging_ = isLagging;
+  }
+
+  bool isLagging() const { return isLagging_; }
+
  private:
   using TopicPartition = std::pair<std::string, int64_t>;
 
@@ -206,6 +243,9 @@ class ConsumerHelper {
   std::map<std::string, TopicPartition> topicPartitions_;
   std::map<std::string, int64_t> lastCommittedOffsets_;
   std::map<std::string, int64_t> highWatermarkOffsets_;
+  std::map<std::string, bool> lagStatuses;
+  // true if any consumer is lagging
+  bool isLagging_;
 };
 
 }  // namespace kafka

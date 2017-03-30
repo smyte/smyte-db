@@ -15,6 +15,7 @@
 #include "folly/Conv.h"
 #include "folly/SocketAddress.h"
 #include "glog/logging.h"
+#include "infra/kafka/ConsumerHelper.h"
 #include "rocksdb/db.h"
 #include "rocksdb/statistics.h"
 #include "pipeline/DatabaseManager.h"
@@ -60,8 +61,14 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   static void connectionClosed() { connectionCount_--; }
   static size_t getConnectionCount() { return connectionCount_; }
 
+  // DatabaseManager is required while ConsumerHelper is optional
+  RedisHandler(std::shared_ptr<DatabaseManager> databaseManager,
+               std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
+      : databaseManager_(databaseManager), consumerHelper_(consumerHelper) {}
+
   explicit RedisHandler(std::shared_ptr<DatabaseManager> databaseManager)
-      : databaseManager_(databaseManager) {}
+      : RedisHandler(databaseManager, nullptr) {}
+
   virtual ~RedisHandler() {}
 
   void read(Context* ctx, codec::RedisValue req) override;
@@ -107,6 +114,8 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
       { "info", { &RedisHandler::infoCommand, 0, 1 } },
       { "monitor", { &RedisHandler::monitorCommand, 0, 0 } },
       { "ping", { &RedisHandler::pingCommand, 0, 0 } },
+      { "ready", { &RedisHandler::readyCommand, 0, 0 } },
+      { "setready", { &RedisHandler::setReadyCommand, 0, 0 } },
       { "select", { &RedisHandler::selectCommand, 1, 1 } },
       { "setmeta", { &RedisHandler::setMetaCommand, 2, 2 } },
       { "sleep", { &RedisHandler::sleepCommand, 1, 1 } },
@@ -181,6 +190,8 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   codec::RedisValue infoCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue monitorCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue pingCommand(const std::vector<std::string>& cmd, Context* ctx);
+  codec::RedisValue readyCommand(const std::vector<std::string>& cmd, Context* ctx);
+  codec::RedisValue setReadyCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue selectCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue setMetaCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue sleepCommand(const std::vector<std::string>& cmd, Context* ctx);
@@ -192,6 +203,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
   void writeToMonitorContext(const std::vector<std::string>& cmd, const std::string& monitorAddr, Context* ctx);
 
   std::shared_ptr<DatabaseManager> databaseManager_;
+  std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper_;
 };
 
 }  // namespace pipeline

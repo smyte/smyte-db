@@ -48,6 +48,7 @@ cc_library(
         "//external:glog",
         "//external:rocksdb",
         "//external:wangle",
+        "//infra/kafka:consumer_helper",
     ],
     copts = [
         "-std=c++14",

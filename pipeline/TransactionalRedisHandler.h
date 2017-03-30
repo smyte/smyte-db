@@ -17,8 +17,12 @@ namespace pipeline {
 // A redis handler that supports transactions
 class TransactionalRedisHandler : public RedisHandler {
  public:
+  TransactionalRedisHandler(std::shared_ptr<DatabaseManager> databaseManager,
+                            std::shared_ptr<infra::kafka::ConsumerHelper> consumerHelper)
+      : RedisHandler(databaseManager, consumerHelper), inTransaction_(false), errorEncountered_(false) {}
+
   explicit TransactionalRedisHandler(std::shared_ptr<DatabaseManager> databaseManager)
-      : RedisHandler(databaseManager), inTransaction_(false), errorEncountered_(false) {}
+      : TransactionalRedisHandler(databaseManager, nullptr) {}
 
   bool handleCommand(const std::string& cmdNameLower, const std::vector<std::string>& cmd, Context* ctx) override {
     return handleCommandWithTransactionalHandlerTable(cmdNameLower, cmd, getTransactionalCommandHandlerTable(), ctx);
