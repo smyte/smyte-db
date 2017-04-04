@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "boost/variant.hpp"
@@ -71,6 +72,11 @@ std::string RedisValue::encode() const {
   }
 
   return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const RedisValue::Type& type) {
+  os << static_cast<std::underlying_type<RedisValue::Type>::type>(type);
+  return os;
 }
 
 constexpr char RedisValue::kTypeIndicators[];

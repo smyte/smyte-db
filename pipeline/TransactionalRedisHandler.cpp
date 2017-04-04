@@ -14,21 +14,21 @@
 namespace pipeline {
 
 bool TransactionalRedisHandler::handleCommandWithTransactionalHandlerTable(
-    const std::string& cmdNameLower, const std::vector<std::string>& cmd,
+    int64_t key, const std::string& cmdNameLower, const std::vector<std::string>& cmd,
     const TransactionalCommandHandlerTable& commandHandlerTable, Context* ctx) {
   // first check for MULTI/EXEC to determine transaction state transitions
   if (cmdNameLower == "multi") {
     if (inTransaction_) {
       // NOTE: nested MULTI is a error but it won't cancel the transaction
-      write(ctx, codec::RedisValue(codec::RedisValue::Type::kError, "MULTI calls cannot be nested"));
+      writeError(key, "MULTI calls cannot be nested", ctx);
     } else {
       inTransaction_ = true;
-      write(ctx, simpleStringOk());
+      write(ctx, codec::RedisMessage(key, simpleStringOk()));
     }
   } else if (cmdNameLower == "exec") {
     if (inTransaction_) {
       if (errorEncountered_) {
-        write(ctx, {codec::RedisValue::Type::kError, "Transaction discarded because of previous errors"});
+        writeError(key, "Transaction discarded because of previous errors", ctx);
       } else {
         std::vector<codec::RedisValue> results;
         rocksdb::WriteBatch writeBatch;
@@ -42,14 +42,13 @@ bool TransactionalRedisHandler::handleCommandWithTransactionalHandlerTable(
         }
         if (errorEncountered_) {
           // NOTE: standard redis protocol does not abort the transaction for runtime errors
-          write(ctx, {codec::RedisValue::Type::kError,
-                      "Transaction discarded because an error was encountered during execution"});
+          writeError(key, "Transaction discarded because an error was encountered during execution", ctx);
         } else {
-          writeResult(codec::RedisValue(std::move(results)), &writeBatch, ctx);
+          writeResult(key, codec::RedisValue(std::move(results)), &writeBatch, ctx);
         }
       }
     } else {
-      write(ctx, codec::RedisValue(codec::RedisValue::Type::kError, "EXEC without MULTI"));
+      writeError(key, "EXEC without MULTI", ctx);
     }
     resetTransactionState();
   } else {
@@ -61,34 +60,35 @@ bool TransactionalRedisHandler::handleCommandWithTransactionalHandlerTable(
 
     if (!validateArgCount(cmd, handlerEntry->second.minArgs, handlerEntry->second.maxArgs)) {
       errorEncountered_ = true;
-      writeError(folly::sformat(kWrongNumArgsTemplate, cmdNameLower), ctx);
+      writeError(key, folly::sformat(kWrongNumArgsTemplate, cmdNameLower), ctx);
       return true;
     }
 
     if (inTransaction_) {
       queuedCommands_.emplace_back(std::make_pair(handlerEntry->second.handlerFunc, std::move(cmd)));
-      write(ctx, { codec::RedisValue::Type::kSimpleString, "QUEUED" });
+      write(ctx, codec::RedisMessage(key, {codec::RedisValue::Type::kSimpleString, "QUEUED"}));
     } else {
       // execute it right away when it's not part of the transaction
       rocksdb::WriteBatch writeBatch;
-      writeResult((this->*(handlerEntry->second.handlerFunc))(cmd, &writeBatch, ctx), &writeBatch, ctx);
+      writeResult(key, (this->*(handlerEntry->second.handlerFunc))(cmd, &writeBatch, ctx), &writeBatch, ctx);
     }
   }
 
   return true;
 }
 
-void TransactionalRedisHandler::writeResult(codec::RedisValue result, rocksdb::WriteBatch* writeBatch, Context* ctx) {
+void TransactionalRedisHandler::writeResult(int64_t key, codec::RedisValue result, rocksdb::WriteBatch* writeBatch,
+                                            Context* ctx) {
   if (writeBatch->Count() > 0) {
     // commit updates first
     rocksdb::Status status = db()->Write(rocksdb::WriteOptions(), writeBatch);
     if (!status.ok()) {
-      write(ctx, errorResp(folly::sformat("RocksDB error: {}", status.ToString())));
+      writeError(key, folly::sformat("RocksDB error: {}", status.ToString()), ctx);
       return;
     }
   }
   // no updates or updates committed successfully, write the result back
-  write(ctx, std::move(result));
+  write(ctx, codec::RedisMessage(key, std::move(result)));
 }
 
 }  // namespace pipeline

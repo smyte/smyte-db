@@ -2,6 +2,10 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "redis_pipeline_factory",
+    srcs = [
+        "OrderedRedisMessageAdapter.h",
+        "OrderedRedisMessageAdapter.cpp",
+    ],
     hdrs = [
         "RedisPipelineFactory.h",
     ],
@@ -9,12 +13,12 @@ cc_library(
         ":redis_handler",
         ":redis_handler_builder",
         "//codec:redis_codec",
-        "//codec:redis_value",
+        "//codec:redis_message",
         "//external:folly",
         "//external:wangle",
     ],
     copts = [
-        "-std=c++11",
+        "-std=c++14",
     ],
 )
 
@@ -42,7 +46,7 @@ cc_library(
     deps = [
         ":build_version",
         ":database_manager",
-        "//codec:redis_value",
+        "//codec:redis_message",
         "//external:boost",
         "//external:folly",
         "//external:glog",
@@ -85,6 +89,20 @@ cc_library(
         "//codec:redis_value",
         "//external:boost",
         "//external:glog",
+    ],
+    copts = [
+        "-std=c++14",
+    ],
+)
+
+cc_library(
+    name = "async_redis_handler",
+    hdrs = [
+        "AsyncRedisHandler.h",
+    ],
+    deps = [
+        ":redis_handler",
+        "//external:boost",
     ],
     copts = [
         "-std=c++14",

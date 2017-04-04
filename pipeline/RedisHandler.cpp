@@ -22,30 +22,30 @@
 
 namespace pipeline {
 
-void RedisHandler::read(Context* ctx, codec::RedisValue req) {
-  if (req.type() == codec::RedisValue::Type::kError) {
-    LOG(ERROR) << "Invalid request: " << req.error();
+void RedisHandler::read(Context* ctx, codec::RedisMessage req) {
+  if (req.val.type() == codec::RedisValue::Type::kError) {
+    LOG(ERROR) << "Invalid request: " << req.val.error();
     write(ctx, req);
     return;
   }
 
-  if (req.type() != codec::RedisValue::Type::kBulkStringArray) {
+  if (req.val.type() != codec::RedisValue::Type::kBulkStringArray) {
     LOG(ERROR) << "Invalid request: " << errorNotRedisArray().error();
-    write(ctx, errorNotRedisArray());
+    write(ctx, codec::RedisMessage(req.key, errorNotRedisArray()));
     return;
   }
 
-  const std::vector<std::string>& cmd = req.bulkStringArray();
+  const std::vector<std::string>& cmd = req.val.bulkStringArray();
   if (cmd.empty()) {
     LOG(ERROR) << "Empty request";
     return;
   }
 
   std::string cmdNameLower = boost::to_lower_copy(cmd.front());
-  if (handleCommand(cmdNameLower, cmd, ctx)) {
+  if (handleCommand(req.key, cmdNameLower, cmd, ctx)) {
     broadcastCmd(cmd, ctx);
   } else {
-    writeError(folly::sformat("Unknown command: '{}'", cmdNameLower), ctx);
+    writeError(req.key, folly::sformat("Unknown command: '{}'", cmdNameLower), ctx);
   }
 }
 
@@ -307,7 +307,7 @@ void RedisHandler::writeToMonitorContext(const std::vector<std::string>& cmd, co
     // format: 1458363281.367954 [0 172.17.42.1:55983] "get" "abc"
     std::string text = folly::sformat("{}.{:0>6} [0 {}] \"{}\"", seconds, microseconds, monitorAddr,
                                       folly::backslashify(folly::join("\" \"", cmd), true));
-    write(ctx, { codec::RedisValue::Type::kSimpleString, std::move(text) });
+    write(ctx, codec::RedisMessage({codec::RedisValue::Type::kSimpleString, std::move(text)}));
   }
 }
 

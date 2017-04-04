@@ -2,11 +2,13 @@
 #define PIPELINE_REDISPIPELINEFACTORY_H_
 
 #include <memory>
+#include <utility>
 
 #include "codec/RedisDecoder.h"
 #include "codec/RedisEncoder.h"
-#include "codec/RedisValue.h"
+#include "codec/RedisMessage.h"
 #include "folly/io/IOBufQueue.h"
+#include "pipeline/OrderedRedisMessageAdapter.h"
 #include "pipeline/RedisHandler.h"
 #include "pipeline/RedisHandlerBuilder.h"
 #include "wangle/channel/AsyncSocketHandler.h"
@@ -15,7 +17,7 @@
 
 namespace pipeline {
 
-using RedisPipeline = wangle::Pipeline<folly::IOBufQueue&, codec::RedisValue>;
+using RedisPipeline = wangle::Pipeline<folly::IOBufQueue&, codec::RedisMessage>;
 
 class RedisPipelineFactory : public wangle::PipelineFactory<RedisPipeline> {
  public:
@@ -30,7 +32,11 @@ class RedisPipelineFactory : public wangle::PipelineFactory<RedisPipeline> {
     pipeline->addBack(wangle::OutputBufferingHandler());
     pipeline->addBack(redisDecoder_);
     pipeline->addBack(redisEncoder_);
-    pipeline->addBack(redisHandlerBuilder_->newHandler());
+    auto redisHandler = redisHandlerBuilder_->newHandler();
+    if (redisHandler->allowAsyncCommandHandler()) {
+      pipeline->addBack(std::make_shared<OrderedRedisMessageAdapter>());
+    }
+    pipeline->addBack(std::move(redisHandler));
     pipeline->finalize();
     return pipeline;
   }

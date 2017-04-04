@@ -36,6 +36,19 @@ cc_test(
 )
 
 cc_library(
+    name = "redis_message",
+    hdrs = [
+        "RedisMessage.h",
+    ],
+    deps = [
+        ":redis_value",
+    ],
+    copts = [
+        "-std=c++14",
+    ],
+)
+
+cc_library(
     name = "redis_codec",
     srcs = [
         "RedisDecoder.cpp",
@@ -48,7 +61,7 @@ cc_library(
         "-std=c++14",
     ],
     deps = [
-        ":redis_value",
+        ":redis_message",
         "//external:folly",
         "//external:glog",
         "//external:wangle",

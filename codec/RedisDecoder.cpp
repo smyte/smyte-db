@@ -12,7 +12,7 @@
 namespace codec {
 
 // Decode Redis Array of Bulk String into a RedisValue as result
-bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& result, size_t& needed) {
+bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisMessage& result, size_t& needed) {
   if (buf.chainLength() < kMinBytesNeeded) {
     needed = kMinBytesNeeded - buf.chainLength();
     return false;
@@ -36,7 +36,7 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
                                    &curr, &arrayLengthState, &needed);
   if (arrayLengthState == LengthFieldState::kInvalid) {
     // encountered a protocol error, all bytes read so far will be abandoned
-    result = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Array length");
+    result.val = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Array length");
     buf.trimStart(curr - start);
     if (buf.chainLength() < kMinBytesNeeded) needed = kMinBytesNeeded - buf.chainLength();
     return true;
@@ -50,7 +50,7 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
     if (arrayLength < -1) {
       LOG(WARNING) << "-1 is the only valid negative Array length";
     }
-    result = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Array length");
+    result.val = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Array length");
     buf.trimStart(curr - start);
     if (buf.chainLength() < kMinBytesNeeded) needed = kMinBytesNeeded - buf.chainLength();
     return true;
@@ -65,7 +65,7 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
 
     if (stringLengthState == LengthFieldState::kInvalid) {
       // encountered a protocol error, all bytes read so far will be abandoned
-      result = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Bulk String length");
+      result.val = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Bulk String length");
       buf.trimStart(curr - start);
       if (buf.chainLength() < kMinBytesNeeded) needed = kMinBytesNeeded - buf.chainLength();
       return true;
@@ -79,7 +79,7 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
       if (arrayLength < -1) {
         LOG(WARNING) << "-1 is the only valid negative Bulk String length";
       }
-      result = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Bulk String length");
+      result.val = RedisValue(RedisValue::Type::kError, "Protocol Error: Invalid Bulk String length");
       buf.trimStart(curr - start);
       if (buf.chainLength() < kMinBytesNeeded) needed = kMinBytesNeeded - buf.chainLength();
       return true;
@@ -98,14 +98,14 @@ bool RedisDecoder::decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& resu
       needed = 2;
       return false;
     } else if (curr.read<char>() != '\r' || curr.read<char>() != '\n') {
-      result = RedisValue(RedisValue::Type::kError, "Protocol Error: Expect '\\r\\n'");
+      result.val = RedisValue(RedisValue::Type::kError, "Protocol Error: Expect '\\r\\n'");
       buf.trimStart(curr - start);
       if (buf.chainLength() < kMinBytesNeeded) needed = kMinBytesNeeded - buf.chainLength();
       return true;
     }
   }
 
-  result = RedisValue(std::move(strings));
+  result.val = RedisValue(std::move(strings));
   buf.trimStart(curr - start);
   if (buf.chainLength() < kMinBytesNeeded) needed = kMinBytesNeeded - buf.chainLength();
   return true;

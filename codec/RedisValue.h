@@ -2,6 +2,7 @@
 #define CODEC_REDISVALUE_H_
 
 #include <memory>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -120,6 +121,8 @@ class RedisValue {
   Type type_;
   DataType data_;
 };
+
+std::ostream& operator<<(std::ostream& os, const RedisValue::Type& type);
 
 }  // namespace codec
 

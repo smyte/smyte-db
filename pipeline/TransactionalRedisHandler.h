@@ -24,22 +24,16 @@ class TransactionalRedisHandler : public RedisHandler {
   explicit TransactionalRedisHandler(std::shared_ptr<DatabaseManager> databaseManager)
       : TransactionalRedisHandler(databaseManager, nullptr) {}
 
-  bool handleCommand(const std::string& cmdNameLower, const std::vector<std::string>& cmd, Context* ctx) override {
-    return handleCommandWithTransactionalHandlerTable(cmdNameLower, cmd, getTransactionalCommandHandlerTable(), ctx);
+  bool handleCommand(int64_t key, const std::string& cmdNameLower, const std::vector<std::string>& cmd,
+                     Context* ctx) override {
+    return handleCommandWithTransactionalHandlerTable(key, cmdNameLower, cmd, getTransactionalCommandHandlerTable(),
+                                                      ctx);
   }
 
  protected:
   using TransactionalCommandHandlerFunc = codec::RedisValue (TransactionalRedisHandler::*)(
       const std::vector<std::string>& cmd, rocksdb::WriteBatch* writeBatch, Context* ctx);
-
-  struct TransactionalCommandHandler {
-    TransactionalCommandHandlerFunc handlerFunc = nullptr;
-    int minArgs = 0;
-    int maxArgs = 0;
-    TransactionalCommandHandler(TransactionalCommandHandlerFunc _handlerFunc, int _minArgs, int _maxArgs)
-        : handlerFunc(_handlerFunc), minArgs(_minArgs), maxArgs(_maxArgs) {}
-  };
-  using TransactionalCommandHandlerTable = std::unordered_map<std::string, TransactionalCommandHandler>;
+  using TransactionalCommandHandlerTable = GenericCommandHandlerTable<TransactionalCommandHandlerFunc>;
 
   // Command handlers inherited from the base, non-transactional redis handler
   static const CommandHandlerTable& baseCommandHandlerTable() {
@@ -62,7 +56,8 @@ class TransactionalRedisHandler : public RedisHandler {
     return baseTable;
   }
 
-  bool handleCommandWithTransactionalHandlerTable(const std::string& cmdNameLower, const std::vector<std::string>& cmd,
+  bool handleCommandWithTransactionalHandlerTable(int64_t key, const std::string& cmdNameLower,
+                                                  const std::vector<std::string>& cmd,
                                                   const TransactionalCommandHandlerTable& commandHandlerTable,
                                                   Context* ctx);
 
@@ -85,7 +80,7 @@ class TransactionalRedisHandler : public RedisHandler {
   }
 
  private:
-  void writeResult(codec::RedisValue result, rocksdb::WriteBatch* writeBatch, Context* ctx);
+  void writeResult(int64_t key, codec::RedisValue result, rocksdb::WriteBatch* writeBatch, Context* ctx);
 
   bool inTransaction_;
   bool errorEncountered_;

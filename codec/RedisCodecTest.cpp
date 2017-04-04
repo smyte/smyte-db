@@ -3,7 +3,7 @@
 
 #include "codec/RedisDecoder.h"
 #include "codec/RedisEncoder.h"
-#include "codec/RedisValue.h"
+#include "codec/RedisMessage.h"
 #include "folly/io/IOBuf.h"
 #include "gtest/gtest.h"
 
@@ -12,7 +12,7 @@ namespace codec {
 TEST(RedisDecoder, Incomplete) {
   RedisDecoder decoder;
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
-  RedisValue result;
+  RedisMessage result;
   size_t needed = 0;
   std::string input;
 
@@ -196,7 +196,7 @@ TEST(RedisDecoder, Incomplete) {
 TEST(RedisDecoder, Invalid) {
   RedisDecoder decoder;
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
-  RedisValue result;
+  RedisMessage result;
   size_t needed = 0;
   std::string input;
 
@@ -208,7 +208,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);
   EXPECT_EQ(0, queue.chainLength());
 
@@ -218,7 +218,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -228,7 +228,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -238,7 +238,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);
   EXPECT_EQ(0, queue.chainLength());
 
@@ -248,7 +248,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -258,7 +258,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -268,7 +268,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -278,7 +278,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -288,7 +288,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Array length\r\n", result.val.encode());
   EXPECT_EQ(0, needed);
   EXPECT_EQ(2, queue.chainLength());
 
@@ -298,7 +298,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -308,7 +308,7 @@ TEST(RedisDecoder, Invalid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.encode());
+  EXPECT_EQ("-Protocol Error: Invalid Bulk String length\r\n", result.val.encode());
   EXPECT_EQ(0, needed);
   EXPECT_EQ(2, queue.chainLength());
 }
@@ -316,7 +316,7 @@ TEST(RedisDecoder, Invalid) {
 TEST(RedisDecoder, Valid) {
   RedisDecoder decoder;
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
-  RedisValue result;
+  RedisMessage result;
   size_t needed = 0;
   std::string input;
 
@@ -328,7 +328,7 @@ TEST(RedisDecoder, Valid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ(input, result.encode());
+  EXPECT_EQ(input, result.val.encode());
   EXPECT_EQ(2, needed);  // '\r\n'
   EXPECT_EQ(0, queue.chainLength());
 
@@ -338,7 +338,7 @@ TEST(RedisDecoder, Valid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("*2\r\n$3\r\nget\r\n$2\r\nab\r\n", result.encode());
+  EXPECT_EQ("*2\r\n$3\r\nget\r\n$2\r\nab\r\n", result.val.encode());
   EXPECT_EQ(0, needed);
   EXPECT_EQ(2, queue.chainLength());
 
@@ -348,7 +348,7 @@ TEST(RedisDecoder, Valid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ("*2\r\n$3\r\nget\r\n$2\r\nab\r\n", result.encode());
+  EXPECT_EQ("*2\r\n$3\r\nget\r\n$2\r\nab\r\n", result.val.encode());
   EXPECT_EQ(0, needed);
   EXPECT_EQ(4, queue.chainLength());
 
@@ -358,7 +358,7 @@ TEST(RedisDecoder, Valid) {
   queue.append(folly::IOBuf::copyBuffer(input));
   needed = 0;
   EXPECT_TRUE(decoder.decode(nullptr, queue, result, needed));
-  EXPECT_EQ(input, result.encode());
+  EXPECT_EQ(input, result.val.encode());
   EXPECT_EQ(2, needed);
   EXPECT_EQ(0, queue.chainLength());
 }
@@ -367,19 +367,19 @@ TEST(RedisEncoder, Encode) {
   RedisEncoder encoder;
   folly::IOBufEqual equal;
 
-  RedisValue integer(123);
+  RedisMessage integer(RedisValue(123));
   EXPECT_TRUE(equal(folly::IOBuf::copyBuffer(":123\r\n"), encoder.encode(integer)));
 
-  RedisValue error(RedisValue::Type::kError, "error");
+  RedisMessage error(RedisValue(RedisValue::Type::kError, "error"));
   EXPECT_TRUE(equal(folly::IOBuf::copyBuffer("-error\r\n"), encoder.encode(error)));
 
-  RedisValue simpleString(RedisValue::Type::kSimpleString, "string");
+  RedisMessage simpleString(RedisValue(RedisValue::Type::kSimpleString, "string"));
   EXPECT_TRUE(equal(folly::IOBuf::copyBuffer("+string\r\n"), encoder.encode(simpleString)));
 
-  RedisValue bulkString(RedisValue::Type::kBulkString, "bulk\r\nstring");
+  RedisMessage bulkString(RedisValue(RedisValue::Type::kBulkString, "bulk\r\nstring"));
   EXPECT_TRUE(equal(folly::IOBuf::copyBuffer("$12\r\nbulk\r\nstring\r\n"), encoder.encode(bulkString)));
 
-  RedisValue bulkStringArray(std::vector<std::string>{"a", "b"});
+  RedisMessage bulkStringArray(RedisValue(std::vector<std::string>{"a", "b"}));
   EXPECT_TRUE(equal(folly::IOBuf::copyBuffer("*2\r\n$1\r\na\r\n$1\r\nb\r\n"), encoder.encode(bulkStringArray)));
 }
 

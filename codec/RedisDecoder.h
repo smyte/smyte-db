@@ -3,7 +3,7 @@
 
 #include "wangle/codec/ByteToMessageDecoder.h"
 
-#include "codec/RedisValue.h"
+#include "codec/RedisMessage.h"
 
 namespace codec {
 
@@ -12,10 +12,10 @@ namespace codec {
 //
 // For example, a PING request is encoded as follows:
 // *1\r\n$4\r\nping\r\n
-// The goal of this decoder is parse such request into a RedisValue.
-class RedisDecoder : public wangle::ByteToMessageDecoder<RedisValue> {
+// The goal of this decoder is parse such request into a RedisValue wrapped in a RedisMessage with default key.
+class RedisDecoder : public wangle::ByteToMessageDecoder<RedisMessage> {
  public:
-  bool decode(Context* ctx, folly::IOBufQueue& buf, RedisValue& result, size_t& needed) override;
+  bool decode(Context* ctx, folly::IOBufQueue& buf, RedisMessage& result, size_t& needed) override;
 
  private:
   enum class LengthFieldState {

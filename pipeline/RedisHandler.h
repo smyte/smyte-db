@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "codec/RedisValue.h"
+#include "codec/RedisMessage.h"
 #include "folly/Conv.h"
 #include "folly/SocketAddress.h"
 #include "glog/logging.h"
@@ -23,7 +23,7 @@
 
 namespace pipeline {
 
-class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
+class RedisHandler : public wangle::HandlerAdapter<codec::RedisMessage> {
  public:
   // A RedisValue eventually gets copied to pipeline's write function
   // So so use a copy-friendly return value instead of const reference to static member
@@ -71,14 +71,15 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
   virtual ~RedisHandler() {}
 
-  void read(Context* ctx, codec::RedisValue req) override;
+  void read(Context* ctx, codec::RedisMessage req) override;
 
   void readEOF(Context* ctx) override { close(ctx); }
   void readException(Context* ctx, folly::exception_wrapper e) override { close(ctx); }
 
   folly::Future<folly::Unit> close(Context* ctx) override {
     DLOG(INFO) << "Connection closing";
-    write(ctx, codec::RedisValue::goAway());
+    // use -1 as a special key to indicate that go away message is not specific to any request
+    write(ctx, codec::RedisMessage(-1, codec::RedisValue::goAway()));
     removeMonitor(ctx);
     connectionClosed();
     return ctx->fireClose();
@@ -86,21 +87,43 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
 
   // Handle a Redis command.
   // @cmd contains both the command name (cmd[0]) and optionally, the arguments (cmd[1..])
-  // Return true if the command is handled by the method; false otherwise
-  virtual bool handleCommand(const std::string& cmdNameLower, const std::vector<std::string>& cmd, Context* ctx) {
-    return handleCommandWithHandlerTable(cmdNameLower, cmd, getCommandHandlerTable(), ctx);
+  // Return true if the command is handled by the method; false otherwise.
+  // Most clients should be okay with this default implementation and only need to override getCommandHandlerTable
+  // to define its own handler functions. Sophisticated clients may override this method directly.
+  virtual bool handleCommand(int64_t key, const std::string& cmdNameLower, const std::vector<std::string>& cmd,
+                             Context* ctx) {
+    auto handlerEntry = getCommandHandlerTable().find(cmdNameLower);
+    if (handlerEntry == getCommandHandlerTable().end()) return false;
+
+    if (verifyCommandHandler(key, cmdNameLower, cmd, handlerEntry->second, ctx)) {
+      processCommandHandlerResult(key, (this->*(handlerEntry->second.handlerFunc))(cmd, ctx), ctx);
+    }
+
+    // Verification may have failed, but it is a known command regardless. Return true to ask caller to stop searching.
+    return true;
+  }
+
+  // Specify whether this redis handler supports async commands.
+  // An async command handler can respond to redis requests asynchronously while maintaining the correct order
+  // when returning results to the clients. If true, this feature carries a small overhead in I/O threads.
+  virtual bool allowAsyncCommandHandler() const {
+    return false;
   }
 
  protected:
   using CommandHandlerFunc = codec::RedisValue (RedisHandler::*)(const std::vector<std::string>& cmd, Context* ctx);
+  template <typename FuncType>
   struct CommandHandler {
-    CommandHandlerFunc handlerFunc = nullptr;
+    FuncType handlerFunc = nullptr;
     int minArgs = 0;
     int maxArgs = 0;
-    CommandHandler(CommandHandlerFunc _handlerFunc, int _minArgs, int _maxArgs)
+    CommandHandler(FuncType _handlerFunc, int _minArgs, int _maxArgs)
         : handlerFunc(_handlerFunc), minArgs(_minArgs), maxArgs(_maxArgs) {}
   };
-  using CommandHandlerTable = std::unordered_map<std::string, CommandHandler>;
+  template <typename CommandHandlerFuncType>
+  using GenericCommandHandlerTable = std::unordered_map<std::string, CommandHandler<CommandHandlerFuncType>>;
+  // Default CommandHandlerTable type
+  using CommandHandlerTable = GenericCommandHandlerTable<CommandHandlerFunc>;
 
   static constexpr char kWrongNumArgsTemplate[] = "Wrong number of arguments for '{}' command";
 
@@ -135,25 +158,26 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
     }
   }
 
-  // Convenience method that takes a command handler table with function pointers to handle redis commands
-  // Most clients should be okay with this default implementation and only need to override getCommandHandlerTable
-  // to define its own handler functions
-  virtual bool handleCommandWithHandlerTable(const std::string& cmdNameLower, const std::vector<std::string>& cmd,
-                                             const CommandHandlerTable& commandHandlerTable, Context* ctx) {
-    auto handlerEntry = commandHandlerTable.find(cmdNameLower);
-    if (handlerEntry == commandHandlerTable.end()) return false;
-
-    if (validateArgCount(cmd, handlerEntry->second.minArgs, handlerEntry->second.maxArgs)) {
-      auto result = (this->*(handlerEntry->second.handlerFunc))(cmd, ctx);
-      // A sync command writes result directly. An async command may do so at a later time.
-      if (result.type() != codec::RedisValue::Type::kAsyncResult) {
-        write(ctx, std::move(result));
-      }
-    } else {
-      writeError(folly::sformat(kWrongNumArgsTemplate, cmdNameLower), ctx);
+  // Verify command handler function. Currently it only checks argument count.
+  template <typename CommandHandlerFuncType>
+  bool verifyCommandHandler(int64_t key, const std::string& cmdNameLower, const std::vector<std::string>& cmd,
+                            const CommandHandler<CommandHandlerFuncType>& commandHandler, Context* ctx) {
+    if (!validateArgCount(cmd, commandHandler.minArgs, commandHandler.maxArgs)) {
+      writeError(key, folly::sformat(kWrongNumArgsTemplate, cmdNameLower), ctx);
+      return false;
     }
 
     return true;
+  }
+
+  // Process the result returned from command handler function.
+  virtual void processCommandHandlerResult(int64_t key, codec::RedisValue&& result, Context* ctx) {
+    // A sync command writes result directly. An async command may do so at a later time.
+    if (result.type() == codec::RedisValue::Type::kAsyncResult) {
+      CHECK(allowAsyncCommandHandler()) << "Use AsyncRedisHandler for redis commands producing async results";
+    } else {
+      write(ctx, codec::RedisMessage(key, std::move(result)));
+    }
   }
 
   // Provide a table handler functions, which allow clients to customize their command handling
@@ -167,9 +191,9 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisValue> {
     return codec::RedisValue(codec::RedisValue::Type::kError, std::move(msg));
   }
 
-  void writeError(std::string&& msg, Context* ctx) {
+  void writeError(int64_t key, std::string&& msg, Context* ctx) {
     LOG(ERROR) << "Error sent to client: " << msg;
-    write(ctx, codec::RedisValue(codec::RedisValue::Type::kError, std::move(msg)));
+    write(ctx, codec::RedisMessage(key, {codec::RedisValue::Type::kError, std::move(msg)}));
   }
 
   // Allow subclasses to customize the output of info command

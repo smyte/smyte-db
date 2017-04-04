@@ -3,15 +3,16 @@
 
 #include <memory>
 
-#include "codec/RedisValue.h"
+#include "codec/RedisMessage.h"
 #include "wangle/codec/MessageToByteEncoder.h"
 
 namespace codec {
 
-class RedisEncoder : public wangle::MessageToByteEncoder<RedisValue> {
+class RedisEncoder : public wangle::MessageToByteEncoder<RedisMessage> {
  public:
-  std::unique_ptr<folly::IOBuf> encode(RedisValue& msg) override {
-    return folly::IOBuf::copyBuffer(msg.encode());
+  std::unique_ptr<folly::IOBuf> encode(RedisMessage& msg) override {
+    // Key in a redis message is only for internal use. There is no need for encoding.
+    return folly::IOBuf::copyBuffer(msg.val.encode());
   }
 };
 
