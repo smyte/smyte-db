@@ -59,10 +59,6 @@ codec::RedisValue RedisHandler::infoCommand(const std::vector<std::string>& cmd,
     }
   } else {
     appendToInfoOutput(&ss);
-    if (consumerHelper_) {
-      ss << std::endl << "# Kafka" << std::endl;
-      consumerHelper_->appendStatsInRedisInfoFormat(&ss);
-    }
   }
   return { codec::RedisValue::Type::kBulkString, ss.str() };
 }
@@ -138,6 +134,11 @@ void RedisHandler::appendToInfoOutput(std::stringstream* ss) {
   // compaction time histogram
   statistics->histogramData(rocksdb::Histograms::COMPACTION_TIME, &histData);
   outputStatistics("compaction", histData, ss);
+
+  if (consumerHelper_) {
+    (*ss) << std::endl << "# Kafka" << std::endl;
+    consumerHelper_->appendStatsInRedisInfoFormat(ss);
+  }
 }
 
 void RedisHandler::outputStatistics(const std::string& name, const rocksdb::HistogramData& histData,
