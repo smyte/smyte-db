@@ -203,19 +203,14 @@ codec::RedisValue RedisHandler::compactCommand(const std::vector<std::string>& c
     return { codec::RedisValue::Type::kError, folly::sformat("Column family not found: {}", columnFamilyName) };
   }
 
-  // compaction could take a very long time, don't block the I/O thread
-  std::thread t([this, columnFamily, keyStart, keyEnd, args]() {
-    if (args == 4) {
-      rocksdb::Slice sBegin(keyStart);
-      rocksdb::Slice sEnd(keyEnd);
+  if (args == 4) {
+    rocksdb::Slice sBegin(keyStart);
+    rocksdb::Slice sEnd(keyEnd);
 
-      this->databaseManager()->forceCompaction(columnFamily, &sBegin, &sEnd);
-    } else {
-      this->databaseManager()->forceCompaction(columnFamily, nullptr, nullptr);
-    }
-  });
-  // allow the worker thread to run in background
-  t.detach();
+    this->databaseManager()->forceCompaction(columnFamily, &sBegin, &sEnd);
+  } else {
+    this->databaseManager()->forceCompaction(columnFamily, nullptr, nullptr);
+  }
 
   return simpleStringOk();
 }
