@@ -414,6 +414,13 @@ void RedisPipelineBootstrap::initializeKafkaProducers(const std::string& brokerL
     if (partition) config.partition = partition->getInt();
     const folly::dynamic* lowLatency = entry.second.get_ptr("low_latency");
     if (lowLatency) config.lowLatency = lowLatency->getBool();
+    // Parse additional librdkafka configs that we pass through
+    const folly::dynamic* topicConfigs = entry.second.get_ptr("topic_configs");
+    if (topicConfigs) {
+      for (const auto& configEntry : topicConfigs->items()) {
+        config.topicConfigs[configEntry.first.getString()] = configEntry.second.getString();
+      }
+    }
     kafkaProducers_[entry.first.getString()] =
         std::make_shared<infra::kafka::Producer>(brokerList, entry.second["topic"].getString(), config);
   }

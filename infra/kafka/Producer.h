@@ -5,6 +5,8 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 
 #include "glog/logging.h"
 #include "infra/kafka/EventCallback.h"
@@ -36,6 +38,8 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
     bool useCompression = true;
     // Prioritize throughput by default
     bool lowLatency = false;
+    // Additional librdkafka topic level configs to set directly
+    std::unordered_map<std::string, std::string> topicConfigs;
   };
 
   Producer(const std::string& brokerList, const std::string& topicStr, Config config)
@@ -45,6 +49,7 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
         partitioner_(config.partitioner),
         useCompression_(config.useCompression),
         lowLatency_(config.lowLatency),
+        topicConfigs_(std::move(config.topicConfigs)),
         deliveryHandler_(config.deliveryHandler),
         conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL)),
         topicConf_(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC)) {
@@ -158,6 +163,7 @@ class Producer : public RdKafka::PartitionerCb, public RdKafka::DeliveryReportCb
   const Partitioner partitioner_;
   const bool useCompression_;
   const bool lowLatency_;
+  const std::unordered_map<std::string, std::string> topicConfigs_;
   DeliveryHandler deliveryHandler_;
   std::unique_ptr<RdKafka::Conf> conf_;
   std::unique_ptr<RdKafka::Conf> topicConf_;

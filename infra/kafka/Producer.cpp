@@ -52,6 +52,12 @@ void Producer::initialize() {
     LOG(FATAL) << "Setting partitioner callback for topic ["  << topicStr_ << "] failed: " << errstr;
   }
 
+  for (const auto& entry : topicConfigs_) {
+    if (topicConf_->set(entry.first, entry.second, errstr) != RdKafka::Conf::CONF_OK) {
+      LOG(FATAL) << "Setting config for topic ["  << topicStr_ << "] failed: " << errstr;
+    }
+  }
+
   producer_.reset(RdKafka::Producer::create(conf_.get(), errstr));
   if (!producer_) {
     LOG(FATAL) << "Failed to create producer: " << errstr;
