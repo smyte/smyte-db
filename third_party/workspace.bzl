@@ -22,9 +22,9 @@ def smyte_workspace(workspace_name):
     # boost
     native.new_http_archive(
         name = "boost_archive",
-        url = "http://pilotfiber.dl.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz",
-        sha256 = "21ef30e7940bc09a0b77a6e59a8eee95f01a766aa03cdfa02f8e167491716ee4",
-        strip_prefix = "boost_1_60_0",
+        url = "http://pilotfiber.dl.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.gz",
+        sha256 = "fe34a4e119798e10b8cc9e565b3b0284e9fd3977ec8a1b19586ad1dec397088b",
+        strip_prefix = "boost_1_63_0",
         build_file = workspace_name + "//third_party:boost.BUILD",
     )
     native.bind(
