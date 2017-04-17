@@ -215,6 +215,22 @@ def smyte_workspace(workspace_name):
         actual = "@gtest_archive//:gmock_main",
     )
 
+    # hiredis
+    native.new_git_repository(
+        name = "hiredis_git",
+        remote = "https://github.com/redis/hiredis",
+        commit = "97cd8157f74674c722dd30360caac1f498fa72ef",
+        build_file = workspace_name + "//third_party:hiredis.BUILD",
+    )
+    native.bind(
+        name = "hiredis",
+        actual = workspace_name + "//third_party/hiredis:hiredis"
+    )
+    native.bind(
+        name = "hiredis_c",
+        actual = "@hiredis_git//:hiredis_c",
+    )
+
     # jsoncpp
     native.new_http_archive(
         name = "jsoncpp_archive",

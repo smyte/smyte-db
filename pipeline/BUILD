@@ -152,6 +152,7 @@ cc_library(
         "RedisPipelineBootstrap.h",
     ],
     deps = [
+        ":embedded_http_server",
         ":kafka_consumer_config",
         ":redis_handler",
         ":redis_handler_builder",
@@ -163,6 +164,7 @@ cc_library(
         "//external:folly",
         "//external:gflags",
         "//external:glog",
+        "//external:hiredis",
         "//external:librdkafka",
         "//external:rocksdb",
         "//external:wangle",

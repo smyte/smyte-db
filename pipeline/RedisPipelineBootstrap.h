@@ -18,6 +18,7 @@
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 #include "pipeline/DatabaseManager.h"
+#include "pipeline/EmbeddedHttpServer.h"
 #include "pipeline/KafkaConsumerConfig.h"
 #include "pipeline/RedisHandler.h"
 #include "pipeline/RedisHandlerBuilder.h"
@@ -188,6 +189,7 @@ class RedisPipelineBootstrap {
   void initializeKafkaConsumer(const std::string& brokerList, const std::string& kafkaConsumerConfigs,
                                int64_t versionTimestampMs);
   void initializeScheduledTaskQueue();
+  void initializeEmbeddedHttpServer(int httpPort, int redisServerPort);
 
   void startOptionalComponents() {
     if (databaseManager_) {
@@ -206,10 +208,16 @@ class RedisPipelineBootstrap {
     for (auto& consumer : kafkaConsumers_) {
       consumer->start();
     }
+    if (embeddedHttpServer_) {
+      embeddedHttpServer_->start();
+    }
   }
 
   void stopOptionalComponents() {
     // stop in the reverse order of start
+    if (embeddedHttpServer_) {
+      embeddedHttpServer_->destroy();
+    }
     for (auto& consumer : kafkaConsumers_) {
       // call stop first as it's non-blocking and consumers will stop in parallel
       consumer->stop();
@@ -305,6 +313,8 @@ class RedisPipelineBootstrap {
   std::vector<std::shared_ptr<infra::kafka::AbstractConsumer>> kafkaConsumers_;
   // Producers are indexed by logical (canonical) topic names because of 1:1 mapping between topic and producer
   std::unordered_map<std::string, std::shared_ptr<infra::kafka::Producer>> kafkaProducers_;
+  // Embedded http server for health check and metrics
+  std::shared_ptr<EmbeddedHttpServer> embeddedHttpServer_;
   // require component
   // NOTE: use raw pointer here to avoid automatic deletion of the pointer.
   // server_->stop(); is sufficient for releasing resources

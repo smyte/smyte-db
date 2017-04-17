@@ -16,6 +16,8 @@
 #include "folly/json.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "hiredis/net.h"
+#include "hiredis/hiredis.h"
 #include "infra/kafka/ConsumerHelper.h"
 #include "infra/kafka/Producer.h"
 #include "infra/ScheduledTaskQueue.h"
@@ -103,6 +105,9 @@ DEFINE_string(kafka_producer_configs, "", "Kafka producer configurations in JSON
 
 // server settings
 DEFINE_int32(port, 9049, "Server port");
+
+// embedded http server
+DEFINE_int32(http_port, -1, "Embedded http server port. A valid port allows embedded to be included.");
 
 // use a static global variable so that signal handlers can reference it
 static std::shared_ptr<pipeline::RedisPipelineBootstrap> redisPipelineBootstrap;
@@ -496,6 +501,46 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
   }
 }
 
+void RedisPipelineBootstrap::initializeEmbeddedHttpServer(int httpPort, int redisServerPort) {
+  embeddedHttpServer_.reset(new EmbeddedHttpServer(httpPort));
+
+  // Always install ready handler for health check
+  CHECK(embeddedHttpServer_->registerHandler(
+      "/ready", [redisServerPort](const std::string& dest, std::string* response) {
+        // We check both redis server health and optionally consumer readiness using the customized READY command.
+        // Timeout in 5 seconds. Though it is a fast localhost connection, we may get a slow response from a loaded box
+        *response = "not ready";
+        auto context = std::unique_ptr<redisContext, void (*)(redisContext*)>(
+            redisConnectWithTimeout("localhost", redisServerPort, {5, 0}), redisFree);
+        if (!context || context->err) {
+          if (context) {
+            LOG(ERROR) << "Connect to local DB failed: " << context->errstr;
+            *response = context->errstr;
+          }
+          return false;
+        }
+        int status = redisContextSetTimeout(context.get(), {5, 0});
+        if (status != REDIS_OK) {
+          LOG(ERROR) << "Set socket timeout failed: " << context->errstr;
+          *response = context->errstr;
+          return false;
+        }
+
+        auto reply = std::unique_ptr<redisReply, void (*)(void*)>(
+            static_cast<redisReply*>(redisCommand(context.get(), "READY")), freeReplyObject);
+        if (!reply || reply->type != REDIS_REPLY_INTEGER || reply->integer != 1) {
+          if (context->err) {
+            LOG(ERROR) << "Query local DB failed: " << context->errstr;
+            *response = context->errstr;
+          }
+          return false;
+        }
+
+        *response = "ready";
+        return true;
+      }));
+}
+
 void RedisPipelineBootstrap::launchServer(int port, int connectionIdleTimeoutMs) {
   LOG(INFO) << "Launching server on port " << port;
   server_ = new wangle::ServerBootstrap<RedisPipeline>();
@@ -560,6 +605,9 @@ int main(int argc, char** argv) {
   redisPipelineBootstrap->initializeScheduledTaskQueue();
   redisPipelineBootstrap->initializeKafkaConsumer(FLAGS_kafka_broker_list, FLAGS_kafka_consumer_configs,
                                                   FLAGS_version_timestamp_ms);
+  if (FLAGS_http_port > 0) {
+    redisPipelineBootstrap->initializeEmbeddedHttpServer(FLAGS_http_port, FLAGS_port);
+  }
 
   redisPipelineBootstrap->startOptionalComponents();
 
