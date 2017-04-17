@@ -231,9 +231,9 @@ def smyte_workspace(workspace_name):
     # jemalloc
     native.new_http_archive(
         name = "jemalloc_archive",
-        url = "https://github.com/jemalloc/jemalloc/archive/4.2.1.tar.gz",
-        strip_prefix = "jemalloc-4.2.1",
-        sha256 = "38abd5c3798dee4bd0e63e082502358cd341b831b038bb443e89370df888a3eb",
+        url = "https://github.com/jemalloc/jemalloc/archive/4.5.0.tar.gz",
+        strip_prefix = "jemalloc-4.5.0",
+        sha256 = "e885b65b95426945655ee91a30f563c9679770c92946bcdd0795f6b78c06c221",
         build_file = workspace_name + "//third_party:jemalloc.BUILD",
     )
     native.bind(

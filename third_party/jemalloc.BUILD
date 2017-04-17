@@ -104,12 +104,12 @@ genrule(
         "$(<) tmpfile je_ >$(@)"
 )
 
-JEMALLOC_VERSION = "4.2.1-0-g3de035335255d553bdb344c32ffdb603816195d8"
+JEMALLOC_VERSION = "4.5.0-0-g04380e79f1e2428bd0ad000bbc6e3d2dfc6b66a5"
 JEMALLOC_VERSION_MAJOR= "4"
-JEMALLOC_VERSION_MINOR= "2"
-JEMALLOC_VERSION_BUGFIX= "1"
+JEMALLOC_VERSION_MINOR= "5"
+JEMALLOC_VERSION_BUGFIX= "0"
 JEMALLOC_VERSION_NREV= "0"
-JEMALLOC_VERSION_GID = "3de035335255d553bdb344c32ffdb603816195d8"
+JEMALLOC_VERSION_GID = "04380e79f1e2428bd0ad000bbc6e3d2dfc6b66a5"
 genrule(
     name = "jemalloc_macros_h",
     srcs = [
@@ -195,6 +195,7 @@ cc_library(
     "src/prof.c",
     "src/quarantine.c",
     "src/rtree.c",
+    "src/spin.c",
     "src/stats.c",
     "src/tcache.c",
     "src/ticker.c",
