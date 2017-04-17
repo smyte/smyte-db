@@ -212,3 +212,18 @@ cc_library(
         "-std=c++14"
     ],
 )
+
+cc_library(
+    name = "embedded_http_server",
+    srcs = [
+        "EmbeddedHttpServer.cpp"
+    ],
+    hdrs = [
+        "EmbeddedHttpServer.h"
+    ],
+    deps = [
+        "//external:cpp-netlib",
+        "//external:folly",
+        "//external:glog",
+    ],
+)
