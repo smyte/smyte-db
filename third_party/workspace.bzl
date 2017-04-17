@@ -72,9 +72,9 @@ def smyte_workspace(workspace_name):
     # curl
     native.new_http_archive(
         name = "curl_archive",
-        url = "https://github.com/curl/curl/archive/curl-7_50_3.tar.gz",
-        strip_prefix = "curl-curl-7_50_3",
-        sha256 = "ecd233ab5871d48b8df362a0044cbd5af69db81840e8fde8dfbfa2307fcb2bf9",
+        url = "https://github.com/curl/curl/archive/curl-7_53_1.tar.gz",
+        strip_prefix = "curl-curl-7_53_1",
+        sha256 = "61806366d3e91c5671607560da3fc31f3f57ba021ecfd190f199048db2fdd5f6",
         build_file = workspace_name + "//third_party:curl.BUILD",
     )
     native.bind(
