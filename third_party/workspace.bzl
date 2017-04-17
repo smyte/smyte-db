@@ -89,9 +89,9 @@ def smyte_workspace(workspace_name):
     # double-conversion
     native.new_http_archive(
         name = "double_conversion_archive",
-        url = "https://github.com/google/double-conversion/archive/d4d68e4.tar.gz",
-        strip_prefix = "double-conversion-d4d68e4e788bec89d55a6a3e33af674087837c82",
-        sha256 = "4c21c78b4787051e682c7b5579ddb0c5fba823328faf14cdf52152a1f5bcdd32",
+        url = "https://github.com/google/double-conversion/archive/4abe326.tar.gz",
+        strip_prefix = "double-conversion-4abe3267170fa52f39460460456990dbae803f4d",
+        sha256 = "eade523d182260ba25fd5f314cee18297075e4aaf49b59ab80ad5998f371491e",
         build_file = workspace_name + "//third_party:double-conversion.BUILD",
     )
     native.bind(
