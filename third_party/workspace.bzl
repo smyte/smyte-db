@@ -315,7 +315,7 @@ def smyte_workspace(workspace_name):
     native.git_repository(
         name = "com_googlesource_code_re2",  # match the name defined in its WORKSPACE file
         remote = "https://github.com/google/re2.git",
-        tag = "2017-01-01",
+        tag = "2017-04-01",
     )
     native.bind(
         name = "re2",
