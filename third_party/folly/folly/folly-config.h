@@ -65,11 +65,6 @@
 #define FOLLY_HAVE_BOOST_THREAD /**/
 #endif
 
-/* Define to 1 if you have the <byteswap.h> header file. */
-#ifndef FOLLY_HAVE_BYTESWAP_H
-#define FOLLY_HAVE_BYTESWAP_H 1
-#endif
-
 /* Define to 1 if we support clock_gettime(2). */
 #ifndef FOLLY_HAVE_CLOCK_GETTIME
 #define FOLLY_HAVE_CLOCK_GETTIME 1
@@ -94,29 +89,9 @@
 /* Define to 1 if you have the <dwarf.h> header file. */
 /* #undef HAVE_DWARF_H */
 
-/* Define to 1 if you have the <elf.h> header file. */
-#ifndef FOLLY_HAVE_ELF_H
-#define FOLLY_HAVE_ELF_H 1
-#endif
-
-/* Define to 1 if you have the <fcntl.h> header file. */
-#ifndef FOLLY_HAVE_FCNTL_H
-#define FOLLY_HAVE_FCNTL_H 1
-#endif
-
 /* Define to 1 if you have the <features.h> header file. */
 #ifndef FOLLY_HAVE_FEATURES_H
 #define FOLLY_HAVE_FEATURES_H 1
-#endif
-
-/* Define to 1 if you have the `getdelim' function. */
-#ifndef FOLLY_HAVE_GETDELIM
-#define FOLLY_HAVE_GETDELIM 1
-#endif
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#ifndef FOLLY_HAVE_GETTIMEOFDAY
-#define FOLLY_HAVE_GETTIMEOFDAY 1
 #endif
 
 /* Define to 1 if the compiler supports ifunc */
@@ -136,6 +111,9 @@
 
 /* Define to 1 if you have the `atomic' library (-latomic). */
 /* #undef HAVE_LIBATOMIC */
+
+/* Define to 1 if you have the `bz2' library (-lbz2). */
+/* #undef HAVE_LIBBZ2 */
 
 /* Define to 1 if you have the `double-conversion' library
    (-ldouble-conversion). */
@@ -172,11 +150,6 @@
 #define FOLLY_HAVE_LIBSNAPPY 1
 #endif
 
-/* Define to 1 if you have the <libunwind.h> header file. */
-#ifndef HAVE_LIBUNWIND_H
-#define HAVE_LIBUNWIND_H 1
-#endif
-
 /* Define to 1 if you have the `z' library (-lz). */
 #ifndef FOLLY_HAVE_LIBZ
 #define FOLLY_HAVE_LIBZ 1
@@ -184,11 +157,6 @@
 
 /* Define to 1 if you have the `zstd' library (-lzstd). */
 /* #undef HAVE_LIBZSTD */
-
-/* Define to 1 if you have the <limits.h> header file. */
-#ifndef FOLLY_HAVE_LIMITS_H
-#define FOLLY_HAVE_LIMITS_H 1
-#endif
 
 /* Define to 1 if membarrier.h is available */
 #ifndef FOLLY_HAVE_LINUX_MEMBARRIER_H
@@ -211,11 +179,6 @@
 #define FOLLY_HAVE_MALLOC_USABLE_SIZE 1
 #endif
 
-/* Define to 1 if you have the `memmove' function. */
-#ifndef FOLLY_HAVE_MEMMOVE
-#define FOLLY_HAVE_MEMMOVE 1
-#endif
-
 /* Define to 1 if you have the <memory.h> header file. */
 #ifndef FOLLY_HAVE_MEMORY_H
 #define FOLLY_HAVE_MEMORY_H 1
@@ -226,27 +189,19 @@
 #define FOLLY_HAVE_MEMRCHR 1
 #endif
 
-/* Define to 1 if you have the `memset' function. */
-#ifndef FOLLY_HAVE_MEMSET
-#define FOLLY_HAVE_MEMSET 1
-#endif
-
-/* Define to 1 if you have the <mutex.h> header file. */
-/* #undef HAVE_MUTEX_H */
-
 /* Define to 1 if you have the `pipe2' function. */
 #ifndef FOLLY_HAVE_PIPE2
 #define FOLLY_HAVE_PIPE2 1
 #endif
 
-/* Define to 1 if you have the `pow' function. */
-#ifndef FOLLY_HAVE_POW
-#define FOLLY_HAVE_POW 1
-#endif
-
 /* Define to 1 if you have the `preadv' function. */
 #ifndef FOLLY_HAVE_PREADV
 #define FOLLY_HAVE_PREADV 1
+#endif
+
+/* Define to 1 if pthread is avaliable */
+#ifndef FOLLY_HAVE_PTHREAD
+#define FOLLY_HAVE_PTHREAD 1
 #endif
 
 /* Define to 1 if the compiler supports pthread_atfork */
@@ -259,32 +214,14 @@
 #define FOLLY_HAVE_PTHREAD_SPINLOCK_T 1
 #endif
 
-/* Define to 1 if the system has the type `ptrdiff_t'. */
-#ifndef FOLLY_HAVE_PTRDIFF_T
-#define FOLLY_HAVE_PTRDIFF_T 1
-#endif
-
 /* Define to 1 if you have the `pwritev' function. */
 #ifndef FOLLY_HAVE_PWRITEV
 #define FOLLY_HAVE_PWRITEV 1
 #endif
 
-/* Define to 1 if you have the <sched.h> header file. */
-#ifndef FOLLY_HAVE_SCHED_H
-#define FOLLY_HAVE_SCHED_H 1
-#endif
-
-/* Define to 1 if you have the `sched_yield' function. */
-#ifndef FOLLY_HAVE_SCHED_YIELD
-#define FOLLY_HAVE_SCHED_YIELD 1
-#endif
-
 /* Define if both -Wshadow-local and -Wshadow-compatible-local are supported.
    */
 /* #undef HAVE_SHADOW_LOCAL_WARNINGS */
-
-/* Define to 1 if stdbool.h conforms to C99. */
-/* #undef HAVE_STDBOOL_H */
 
 /* Define if g++ supports C++1y features. */
 #ifndef FOLLY_HAVE_STDCXX_1Y
@@ -307,16 +244,6 @@
 #define FOLLY_HAVE_STD__IS_TRIVIALLY_COPYABLE 1
 #endif
 
-/* Define to 1 if std::this_thread::sleep_for() is defined. */
-#ifndef FOLLY_HAVE_STD__THIS_THREAD__SLEEP_FOR
-#define FOLLY_HAVE_STD__THIS_THREAD__SLEEP_FOR 1
-#endif
-
-/* Define to 1 if you have the `strerror' function. */
-#ifndef FOLLY_HAVE_STRERROR
-#define FOLLY_HAVE_STRERROR 1
-#endif
-
 /* Define to 1 if you have the <strings.h> header file. */
 #ifndef FOLLY_HAVE_STRINGS_H
 #define FOLLY_HAVE_STRINGS_H 1
@@ -330,11 +257,6 @@
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #ifndef FOLLY_HAVE_SYS_STAT_H
 #define FOLLY_HAVE_SYS_STAT_H 1
-#endif
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#ifndef FOLLY_HAVE_SYS_TIME_H
-#define FOLLY_HAVE_SYS_TIME_H 1
 #endif
 
 /* Define to 1 if you have the <sys/types.h> header file. */
@@ -374,9 +296,6 @@
 
 /* Define to 1 if the runtime supports XSI-style strerror_r */
 /* #undef HAVE_XSI_STRERROR_R */
-
-/* Define to 1 if the system has the type `_Bool'. */
-/* #undef HAVE__BOOL */
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #ifndef FOLLY_LT_OBJDIR

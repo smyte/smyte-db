@@ -23,6 +23,7 @@ cc_library(
         "wangle/concurrent/*.h",
         "wangle/deprecated/rx/*.h",
         "wangle/ssl/*.h",
+        "wangle/util/*.h",
     ]),
     includes = [
         ".",

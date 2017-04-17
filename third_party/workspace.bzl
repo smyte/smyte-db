@@ -102,9 +102,9 @@ def smyte_workspace(workspace_name):
     # folly
     native.new_http_archive(
         name = "folly_archive",
-        url = "https://github.com/facebook/folly/archive/v2016.12.19.00.tar.gz",
-        strip_prefix = "folly-2016.12.19.00",
-        sha256 = "471050ccd2a32f551eb11f43170d3f9cdd39d363ec026ca922b872d1c03831c1",
+        url = "https://github.com/facebook/folly/archive/v2017.04.17.00.tar.gz",
+        strip_prefix = "folly-2017.04.17.00",
+        sha256 = "a14d872cbf518369a607294e94d1068d27619051cf92277bf215b2536bf68f01",
         build_file = workspace_name + "//third_party:folly.BUILD",
     )
     native.bind(
@@ -354,9 +354,9 @@ def smyte_workspace(workspace_name):
     # wangle
     native.new_http_archive(
         name = "wangle_archive",
-        url = "https://github.com/facebook/wangle/archive/v2017.01.09.00.tar.gz",
-        strip_prefix = "wangle-2017.01.09.00",
-        sha256 = "54e43e15156817b4352e6c9c338326464bc7184dfbae960f92019aab77db6950",
+        url = "https://github.com/facebook/wangle/archive/v2017.04.17.00.tar.gz",
+        strip_prefix = "wangle-2017.04.17.00",
+        sha256 = "10dd53b6104f96d4c97fb39072aeb2b42cbb2a2ec91d047ae11e5596654ca324",
         build_file = workspace_name + "//third_party:wangle.BUILD",
     )
     native.bind(
