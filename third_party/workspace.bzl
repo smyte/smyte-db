@@ -118,22 +118,22 @@ def smyte_workspace(workspace_name):
 
     # gflags
     native.http_archive(
-        name = "gflags_archive",
-        url = "https://github.com/gflags/gflags/archive/f4eace1.tar.gz",
-        strip_prefix = "gflags-f4eace133187e0a101a6d6d71c55592b572de189",
-        sha256 = "4bc2b2d677aaeb26a319fc58096976bf162ccdae66db8bb50a98a925d62f71fa",
+        name = "com_github_gflags_gflags",  # match the name defined in its WORKSPACE file
+        url = "https://github.com/gflags/gflags/archive/9314597.tar.gz",
+        strip_prefix = "gflags-9314597d4b742ed6f95665241345e590a0f5759b",
+        sha256 = "75155b41074c09b2788e2415c1b6151b663afca9825c1345714a9476438a5336",
     )
     native.bind(
         name = "gflags",
-        actual = "@gflags_archive//:gflags",
+        actual = "@com_github_gflags_gflags//:gflags",
     )
 
     # glog
     native.new_http_archive(
         name = "glog_archive",
-        url = "https://github.com/google/glog/archive/0472b91.tar.gz",
-        strip_prefix = "glog-0472b91c5defdf90cff7292e3bf7bd86770a9a0a",
-        sha256 = "abb174454241c1c5b84f83d256a4bf0def8c1e725e3c06650f361e51def4005e",
+        url = "https://github.com/google/glog/archive/da816ea.tar.gz",
+        strip_prefix = "glog-da816ea70645e463aa04f9564544939fa327d5a7",
+        sha256 = "54fa0b1de92795c877d3fae363a1a014de5c16b7232a159186ee9a1894cd9733",
         build_file = workspace_name + "//third_party:glog.BUILD",
     )
     native.bind(
