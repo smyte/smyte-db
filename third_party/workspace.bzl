@@ -367,9 +367,9 @@ def smyte_workspace(workspace_name):
     # zlib
     native.new_http_archive(
         name = "zlib_archive",
-        url = "https://github.com/madler/zlib/archive/v1.2.8.tar.gz",
-        strip_prefix = "zlib-1.2.8",
-        sha256 = "e380bd1bdb6447508beaa50efc653fe45f4edc1dafe11a251ae093e0ee97db9a",
+        url = "https://github.com/madler/zlib/archive/v1.2.11.tar.gz",
+        strip_prefix = "zlib-1.2.11",
+        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
         build_file = workspace_name + "//third_party:zlib.BUILD",
     )
     native.bind(
