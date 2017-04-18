@@ -114,6 +114,7 @@ cc_library(
         "src/rdkafka.h",
     ],
     copts = [
+        "-UNDEBUG",  # bazel define NDEBUG by default, need to undefined it to enable all the asserts
         "-Wall",
         "-Wfloat-equal",
         "-Wpointer-arith",
