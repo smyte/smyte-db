@@ -303,7 +303,7 @@ void RedisHandler::writeToMonitorContext(const std::vector<std::string>& cmd, co
     // format: 1458363281.367954 [0 172.17.42.1:55983] "get" "abc"
     std::string text = folly::sformat("{}.{:0>6} [0 {}] \"{}\"", seconds, microseconds, monitorAddr,
                                       folly::backslashify(folly::join("\" \"", cmd), true));
-    write(ctx, codec::RedisMessage({codec::RedisValue::Type::kSimpleString, std::move(text)}));
+    write(ctx, codec::RedisMessage(-1, {codec::RedisValue::Type::kSimpleString, std::move(text)}));
   }
 }
 
