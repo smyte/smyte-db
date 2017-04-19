@@ -47,7 +47,7 @@ class EmbeddedHttpServer {
     server_.reset(
         new Server(Server::options(*rootHandler_)
                        .reuse_address(true)
-                       .address("localhost")
+                       .address("::")
                        .port(folly::to<std::string>(port_))
                        .thread_pool(std::make_shared<boost::network::utils::thread_pool>(kDefaultThreadPoolSize))));
 
