@@ -30,6 +30,7 @@
 #include "rocksdb/table.h"
 #include "wangle/acceptor/ServerSocketConfig.h"
 #include "wangle/bootstrap/ServerBootstrap.h"
+#include "wtf/runtime.h"
 
 // commandline flags shared by all services
 // NOTE: any flags end with `_one_off` is a one-off flag that only gets applied once regardless of server restart.
@@ -108,6 +109,8 @@ DEFINE_int32(port, 9049, "Server port");
 
 // embedded http server
 DEFINE_int32(http_port, -1, "Embedded http server port. A valid port allows embedded to be included.");
+
+DEFINE_string(trace_file_path, "", "File path for trace output");
 
 // use a static global variable so that signal handlers can reference it
 static std::shared_ptr<pipeline::RedisPipelineBootstrap> redisPipelineBootstrap;
@@ -621,5 +624,15 @@ int main(int argc, char** argv) {
   redisPipelineBootstrap->stopRocksDb();
 
   redisPipelineBootstrap.reset();
+
+#if defined(WTF_ENABLE)
+  if (!FLAGS_trace_file_path.empty()) {
+    if (wtf::Runtime::GetInstance()->SaveToFile(FLAGS_trace_file_path)) {
+      LOG(INFO) << "Saved trace file: " << FLAGS_trace_file_path;
+    } else {
+      LOG(ERROR) << "Error saving trace file: " << FLAGS_trace_file_path;
+    }
+  }
+#endif  // WTF_ENABLE
   return 0;
 }

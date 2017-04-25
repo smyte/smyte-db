@@ -168,6 +168,7 @@ cc_library(
         "//external:librdkafka",
         "//external:rocksdb",
         "//external:wangle",
+        "//external:wtf",
     ],
     copts = [
         "-std=c++14"

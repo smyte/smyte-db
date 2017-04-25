@@ -380,6 +380,19 @@ def smyte_workspace(workspace_name):
         actual = "@wangle_archive//:wangle",
     )
 
+    # wtf
+    native.new_http_archive(
+        name = "wtf_archive",
+        url = "https://github.com/google/tracing-framework/archive/f35328f.tar.gz",
+        strip_prefix = "tracing-framework-f35328facf41b97cd33756f4a05b74533fe25440",
+        sha256 = "9222f5ea09a061f9710b92d451cceb602bea001a4cfc64726f6ce13aa9f9a8f8",
+        build_file = workspace_name + "//third_party:wtf.BUILD",
+    )
+    native.bind(
+        name = "wtf",
+        actual = "@wtf_archive//:wtf",
+    )
+
     # zlib
     native.new_http_archive(
         name = "zlib_archive",
