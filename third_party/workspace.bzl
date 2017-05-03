@@ -56,16 +56,17 @@ def smyte_workspace(workspace_name):
         actual = "@boost_archive//:system",
     )
 
-    # civetweb
+    # cpp-netlib
     native.new_git_repository(
-        name = "civetweb_git",
-        remote = "https://github.com/civetweb/civetweb.git",
-        commit = "85424a4",
-        build_file = workspace_name + "//third_party:civetweb.BUILD"
+        name = "cpp_netlib_git",
+        remote = "https://github.com/cpp-netlib/cpp-netlib",
+        commit = "f87285973b3d54801aedc356834e41729c3d0948",
+        init_submodules = 1,
+        build_file = workspace_name + "//third_party:cpp-netlib.BUILD",
     )
     native.bind(
-        name = "civetweb",
-        actual = "@civetweb_git//:civetweb",
+        name = "cpp-netlib",
+        actual = "@cpp_netlib_git//:cpp-netlib",
     )
 
     # curl
