@@ -2,24 +2,23 @@
 
 namespace pipeline {
 
-void EmbeddedHttpServer::RootHandler::operator()(const Server::request& request, Server::connection_ptr conn) {
-  static Server::response_header headers[] = {{"Connection", "close"}, {"Content-Type", "text/plain"}};
-  // NOTE: request.destination may include both path and query. But we assume clients don't provide query for now
-  auto it = handlerTable.find(request.destination);
+bool EmbeddedHttpServer::RootHandler::handleGet(CivetServer* server, struct mg_connection* conn) {
+  auto reqInfo = mg_get_request_info(conn);
+  auto it = handlerTable.find(reqInfo->local_uri);
   if (it == handlerTable.end()) {
-    conn->set_status(Server::connection::bad_request);
-    conn->set_headers(boost::make_iterator_range(headers, headers + 2));
-    return;
+    mg_printf(conn, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n");
+    return true;
   }
 
   std::string response;
-  if (it->second(request.destination, &response)) {
-    conn->set_status(Server::connection::ok);
+  if (it->second(&response)) {
+    mg_printf(conn, "HTTP/1.1 200 OK\r\n");
   } else {
-    conn->set_status(Server::connection::internal_server_error);
+    mg_printf(conn, "HTTP/1.1 500 Internal Server Error\r\n");
   }
-  conn->set_headers(boost::make_iterator_range(headers, headers + 2));
-  conn->write(response);
+  mg_printf(conn, "Content-Type: text/plain\r\nConnection: close\r\n\r\n");
+  mg_printf(conn, response.data(), response.size());
+  return true;
 }
 
 constexpr int EmbeddedHttpServer::kDefaultThreadPoolSize;

@@ -509,7 +509,7 @@ void RedisPipelineBootstrap::initializeEmbeddedHttpServer(int httpPort, int redi
 
   // Always install ready handler for health check
   CHECK(embeddedHttpServer_->registerHandler(
-      "/ready", [redisServerPort](const std::string& dest, std::string* response) {
+      "/ready", [redisServerPort](std::string* response) {
         // We check both redis server health and optionally consumer readiness using the customized READY command.
         // Timeout in 5 seconds. Though it is a fast localhost connection, we may get a slow response from a loaded box
         *response = "not ready";

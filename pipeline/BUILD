@@ -225,7 +225,7 @@ cc_library(
         "EmbeddedHttpServer.h"
     ],
     deps = [
-        "//external:cpp-netlib",
+        "//external:civetweb",
         "//external:folly",
         "//external:glog",
     ],
