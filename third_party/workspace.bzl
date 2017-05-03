@@ -327,6 +327,17 @@ def smyte_workspace(workspace_name):
         actual = "@murmurhash3_archive//:murmurhash3",
     )
 
+    # protobuf
+    native.git_repository(
+        name = "protobuf_git",
+        remote = "https://github.com/google/protobuf.git",
+        tag = "v3.3.0",
+    )
+    native.bind(
+        name = "protobuf_protoc",
+        actual = "@protobuf_git//:protoc",
+    )
+
     #re2
     native.git_repository(
         name = "com_googlesource_code_re2",  # match the name defined in its WORKSPACE file
