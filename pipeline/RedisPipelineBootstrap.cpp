@@ -505,7 +505,12 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
 }
 
 void RedisPipelineBootstrap::initializeEmbeddedHttpServer(int httpPort, int redisServerPort) {
-  embeddedHttpServer_.reset(new EmbeddedHttpServer(httpPort));
+  embeddedHttpServer_ = std::make_shared<EmbeddedHttpServer>(httpPort);
+
+  // Enable metrics at /metrics
+  metricsExposer_ = std::make_shared<prometheus::Exposer>(embeddedHttpServer_->getBaseServer());
+  metricsRegistry_ = std::make_shared<prometheus::Registry>();
+  metricsExposer_->RegisterCollectable(metricsRegistry_);
 
   // Always install ready handler for health check
   CHECK(embeddedHttpServer_->registerHandler(

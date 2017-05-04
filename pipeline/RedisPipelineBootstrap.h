@@ -23,6 +23,8 @@
 #include "pipeline/RedisHandler.h"
 #include "pipeline/RedisHandlerBuilder.h"
 #include "pipeline/RedisPipelineFactory.h"
+#include "prometheus/exposer.h"
+#include "prometheus/registry.h"
 #include "wangle/bootstrap/ServerBootstrap.h"
 
 namespace pipeline {
@@ -165,6 +167,10 @@ class RedisPipelineBootstrap {
   std::shared_ptr<infra::kafka::Producer> getKafkaProducer(const std::string& name) const {
     auto it = kafkaProducers_.find(name);
     return it == kafkaProducers_.end() ? std::shared_ptr<infra::kafka::Producer>() : it->second;
+  }
+  std::shared_ptr<prometheus::Registry> getPrometheusRegistry() const {
+    CHECK_NOTNULL(metricsRegistry_.get());
+    return metricsRegistry_;
   }
 
   void initializeRocksDb(const std::string& dbPath, const std::string& dbPaths,
@@ -313,6 +319,9 @@ class RedisPipelineBootstrap {
   std::vector<std::shared_ptr<infra::kafka::AbstractConsumer>> kafkaConsumers_;
   // Producers are indexed by logical (canonical) topic names because of 1:1 mapping between topic and producer
   std::unordered_map<std::string, std::shared_ptr<infra::kafka::Producer>> kafkaProducers_;
+  // Prometheus metrics
+  std::shared_ptr<prometheus::Exposer> metricsExposer_;
+  std::shared_ptr<prometheus::Registry> metricsRegistry_;
   // Embedded http server for health check and metrics
   std::shared_ptr<EmbeddedHttpServer> embeddedHttpServer_;
   // require component

@@ -50,6 +50,7 @@ cc_library(
         "//external:boost",
         "//external:folly",
         "//external:glog",
+        "//external:prometheus",
         "//external:rocksdb",
         "//external:wangle",
         "//infra/kafka:consumer_helper",
