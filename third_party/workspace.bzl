@@ -326,6 +326,30 @@ def smyte_workspace(workspace_name):
         actual = "@murmurhash3_archive//:murmurhash3",
     )
 
+    # prometheus
+    native.new_git_repository(
+        name = "prometheus_git",
+        remote = "https://github.com/jupp0r/prometheus-cpp.git",
+        commit = "8786dc357d2d1f4aaa4172144727ab086ed91eb7",
+        build_file = workspace_name + "//third_party:prometheus.BUILD"
+    )
+    native.bind(
+        name = "prometheus",
+        actual = "@prometheus_git//:prometheus",
+    )
+
+    # prometheus client model
+    native.new_git_repository(
+        name = "prometheus_client_model_git",
+        remote = "https://github.com/prometheus/client_model.git",
+        commit = "6f3806018612930941127f2a7c6c453ba2c527d2",
+        build_file = workspace_name + "//third_party:prometheus-client-model.BUILD"
+    )
+    native.bind(
+        name = "prometheus_client_model",
+        actual = "@prometheus_client_model_git//:client_model",
+    )
+
     # protobuf
     native.git_repository(
         name = "protobuf_git",
@@ -335,6 +359,10 @@ def smyte_workspace(workspace_name):
     native.bind(
         name = "protobuf_protoc",
         actual = "@protobuf_git//:protoc",
+    )
+    native.bind(
+        name = "protobuf",
+        actual = "@protobuf_git//:protobuf",
     )
 
     #re2
