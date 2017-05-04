@@ -168,7 +168,7 @@ class RedisPipelineBootstrap {
     auto it = kafkaProducers_.find(name);
     return it == kafkaProducers_.end() ? std::shared_ptr<infra::kafka::Producer>() : it->second;
   }
-  std::shared_ptr<prometheus::Registry> getPrometheusRegistry() const {
+  std::shared_ptr<prometheus::Registry> getMetricsRegistry() const {
     CHECK_NOTNULL(metricsRegistry_.get());
     return metricsRegistry_;
   }
