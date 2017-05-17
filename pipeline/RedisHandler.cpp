@@ -275,6 +275,28 @@ codec::RedisValue RedisHandler::sleepCommand(const std::vector<std::string>& cmd
   return simpleStringOk();
 }
 
+codec::RedisValue RedisHandler::waitForCommitCommand(const std::vector<std::string>& cmd, Context* ctx) {
+  if (!consumerHelper_) {
+    return errorResp("WaitForCommit is not configured. Requires ConsumerHelper.");
+  }
+
+  const std::string& topic = cmd[1];
+  const std::string& suffix = cmd[3];
+  int partition = -1;
+  int64_t offset = -1;
+  try {
+    partition = folly::to<int>(cmd[2]);
+    offset = folly::to<int64_t>(cmd[4]);
+  } catch (folly::ConversionError&) {
+    return errorInvalidInteger();
+  }
+  auto offsetKey = consumerHelper_->getOffsetKey(topic, partition, suffix);
+  while (consumerHelper_->getLastCommittedOffset(offsetKey) <= offset) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return simpleStringOk();
+}
+
 void RedisHandler::broadcastCmd(const std::vector<std::string>& cmd, Context* ctx) {
   // quickly check if there is any pending monitors before the expensive locking
   if (UNLIKELY(!monitors_.empty())) {

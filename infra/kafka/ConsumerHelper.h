@@ -121,9 +121,13 @@ class ConsumerHelper {
     return true;
   }
 
+  std::string getOffsetKey(const std::string& topic, int partition, const std::string& offsetKeySuffix) {
+    return folly::sformat("~kafka-offset~{}~{}~{}", topic, partition, offsetKeySuffix);
+  }
+
   // Support a new topic/partition pair and return a offset key with the given suffix
   std::string linkTopicPartition(const std::string& topic, int partition, const std::string& offsetKeySuffix) {
-    std::string offsetKey = folly::sformat("~kafka-offset~{}~{}~{}", topic, partition, offsetKeySuffix);
+    auto offsetKey = getOffsetKey(topic, partition, offsetKeySuffix);
     const auto it = topicPartitions_.find(offsetKey);
     CHECK(it == topicPartitions_.end()) << "Topic " << topic << " partition " << partition << " already linked";
 

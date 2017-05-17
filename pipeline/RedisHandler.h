@@ -143,6 +143,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisMessage> {
       { "setmeta", { &RedisHandler::setMetaCommand, 2, 2 } },
       { "sleep", { &RedisHandler::sleepCommand, 1, 1 } },
       { "thaw", { &RedisHandler::thawCommand, 0, 0 } },
+      { "waitforcommit", { &RedisHandler::waitForCommitCommand, 4, 4 } },
     });
     baseTable.insert(newTable.begin(), newTable.end());
     return baseTable;
@@ -220,6 +221,7 @@ class RedisHandler : public wangle::HandlerAdapter<codec::RedisMessage> {
   codec::RedisValue setMetaCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue sleepCommand(const std::vector<std::string>& cmd, Context* ctx);
   codec::RedisValue thawCommand(const std::vector<std::string>& cmd, Context* ctx);
+  codec::RedisValue waitForCommitCommand(const std::vector<std::string>& cmd, Context* ctx);
 
   void broadcastCmd(const std::vector<std::string>& cmd, Context* ctx);
   void outputStatistics(const std::string& name, const rocksdb::HistogramData& histData, std::stringstream* ss);
