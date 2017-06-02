@@ -1,6 +1,7 @@
 #ifndef INFRA_SMYTEID_H_
 #define INFRA_SMYTEID_H_
 
+#include <chrono>
 #include <string>
 
 #include "boost/endian/buffers.hpp"
@@ -14,7 +15,11 @@ class SmyteId {
   // 40 bits local machine increment
   static constexpr int kTimestampBits = 40;
   static constexpr int64_t kTimestampSize = 1L << kTimestampBits;
-  static constexpr int64_t kTimestampEpoch = 1262304000000;  // 2010-01-01
+  static constexpr int64_t kTimestampEpoch = 1262304000000L;  // 2010-01-01
+
+  // Sanity check
+  static constexpr int64_t kTimestampSaneEarliest = 1416441600000L;  // 2014-11-20
+  static constexpr int64_t kTimestampSaneFutureMs = 1000L * 3600L * 24L * 90L;  // 90 days
 
   // 10 bits local machine increment
   static constexpr int kUniqueBits = 10;
@@ -29,7 +34,7 @@ class SmyteId {
   static constexpr int kVirtualShardBits = 10;
   static constexpr int kVirtualShardCount = 1L << kVirtualShardBits;
 
-  static constexpr int64_t kKafkaBackedSmyteIdStartMs = 1483228800000;  // 2017-01-01
+  static constexpr int64_t kKafkaBackedSmyteIdStartMs = 1483228800000L;  // 2017-01-01
 
   // Generate a smyte id deterministically from kafka offset, timestamp and virtual shard.
   static SmyteId generateFromKafka(int64_t kafkaOffset, int64_t timestampMs, int virtualShard) {
@@ -43,6 +48,11 @@ class SmyteId {
     int64_t smyteId = (((shiftedTimestamp << SmyteId::kUniqueBits) + unique) << SmyteId::kMachineBits) + machine;
 
     return SmyteId(smyteId);
+  }
+
+  static int64_t nowMs() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+        .count();
   }
 
   explicit SmyteId(int64_t smyteId) : smyteId_(smyteId) {}
@@ -88,6 +98,11 @@ class SmyteId {
 
   bool isGeneratedFromKafka() const {
     return timestamp() >= kKafkaBackedSmyteIdStartMs && machine() >= kMachineBase;
+  }
+
+  bool isValid() const {
+    auto ts = timestamp();
+    return ts >= kTimestampSaneEarliest && ts <= nowMs() + kTimestampSaneFutureMs;
   }
 
  private:
