@@ -447,7 +447,7 @@ def smyte_workspace(workspace_name):
     native.git_repository(
         name = "tdigest_git",
         remote = "https://github.com/derrickburns/tdigest.git",
-        commit = "110588d25d1d375f0d7a3d554c43cd93c562bd68",
+        commit = "dfdbca0b08867bb7f7ea1500f57a891abaf0ad72",
     )
     native.bind(
         name = "tdigest",
