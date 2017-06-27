@@ -67,6 +67,10 @@ class SmyteId {
     return result;
   }
 
+  int64_t asInt() const {
+    return smyteId_;
+  }
+
   // Append the smyte id to the output as an 8-byte string. Use big endian so that it can be sorted in numerical order.
   void appendAsBinary(std::string* out) const {
     boost::endian::big_int64_buf_t value(smyteId_);
