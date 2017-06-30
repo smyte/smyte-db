@@ -434,12 +434,12 @@ void RedisPipelineBootstrap::initializeKafkaProducers(const std::string& brokerL
   }
 }
 
-void RedisPipelineBootstrap::initializeScheduledTaskQueue() {
-  if (config_.scheduledTaskProcessorFactory) {
-    CHECK_NOTNULL(databaseManager_.get());
-    rocksdb::ColumnFamilyHandle* columnFamily = getColumnFamily(infra::ScheduledTaskQueue::columnFamilyName());
-    scheduledTaskQueue_ = std::make_shared<infra::ScheduledTaskQueue>(config_.scheduledTaskProcessorFactory(this),
-                                                                      databaseManager_, columnFamily);
+void RedisPipelineBootstrap::initializeScheduledTaskQueues() {
+  CHECK_NOTNULL(databaseManager_.get());
+  for (auto& entry : config_.scheduledTaskProcessorFactoryMap) {
+    rocksdb::ColumnFamilyHandle* columnFamily = getColumnFamily(entry.first);
+    scheduledTaskQueueMap_[entry.first] =
+        std::make_shared<infra::ScheduledTaskQueue>(entry.second(this), databaseManager_, columnFamily);
   }
 }
 
@@ -456,9 +456,7 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
   }
 
   CHECK_NOTNULL(databaseManager_.get());
-  if (config_.scheduledTaskProcessorFactory) {
-    CHECK_NOTNULL(scheduledTaskQueue_.get());
-  }
+  CHECK_EQ(config_.scheduledTaskProcessorFactoryMap.size(), scheduledTaskQueueMap_.size());
 
   kafkaConsumerHelper_ = std::make_shared<infra::kafka::ConsumerHelper>(
       rocksDb_, getColumnFamily(DatabaseManager::metadataColumnFamilyName()));
@@ -559,9 +557,7 @@ void RedisPipelineBootstrap::launchServer(int port, int connectionIdleTimeoutMs)
 
   // Check the existence of dependencies based on configuration
   CHECK_NOTNULL(databaseManager_.get());
-  if (config_.scheduledTaskProcessorFactory) {
-    CHECK_NOTNULL(scheduledTaskQueue_.get());
-  }
+  CHECK_EQ(config_.scheduledTaskProcessorFactoryMap.size(), scheduledTaskQueueMap_.size());
 
   server_->childPipeline(std::make_shared<pipeline::RedisPipelineFactory>(std::make_shared<DefaultRedisHandlerBuilder>(
       config_.redisHandlerFactory, config_.singletonRedisHandler, this)));
@@ -610,7 +606,7 @@ int main(int argc, char** argv) {
   // write data, so they should be initialized first
   redisPipelineBootstrap->initializeKafkaProducers(FLAGS_kafka_broker_list, FLAGS_kafka_producer_configs);
   redisPipelineBootstrap->initializeDatabaseManager(FLAGS_master_replica);
-  redisPipelineBootstrap->initializeScheduledTaskQueue();
+  redisPipelineBootstrap->initializeScheduledTaskQueues();
   redisPipelineBootstrap->initializeKafkaConsumer(FLAGS_kafka_broker_list, FLAGS_kafka_consumer_configs,
                                                   FLAGS_version_timestamp_ms);
   if (FLAGS_http_port > 0) {

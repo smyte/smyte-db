@@ -51,6 +51,8 @@ class RedisPipelineBootstrap {
   // A factory that creates a ScheduledTaskProcessor instance with a provided database manager
   using ScheduledTaskProcessorFactory =
       std::shared_ptr<infra::ScheduledTaskProcessor> (*)(RedisPipelineBootstrap*);
+  // Map column names to ScheduledTaskProcessor factories that use the column names
+  using ScheduledTaskProcessorFactoryMap = std::unordered_map<std::string, ScheduledTaskProcessorFactory>;
 
   // Function to configure a column family in RocksDB, given a defaultBlockCacheSizeMb
   using RocksDbCfConfigurator = void (*)(int, rocksdb::ColumnFamilyOptions*);
@@ -100,7 +102,7 @@ class RedisPipelineBootstrap {
     DatabaseManagerFactory databaseManagerFactory = nullptr;
 
     // Optional
-    ScheduledTaskProcessorFactory scheduledTaskProcessorFactory = nullptr;
+    ScheduledTaskProcessorFactoryMap scheduledTaskProcessorFactoryMap;
 
     // Optional
     // The default column family and smyte metadata column family are created and optimized for point lookups, but
@@ -122,14 +124,14 @@ class RedisPipelineBootstrap {
     Config(RedisHandlerFactory _redisHandlerFactory,
            KafkaConsumerFactoryMap _kafkaConsumerFactoryMap = KafkaConsumerFactoryMap(),
            DatabaseManagerFactory _databaseManagerFactory = nullptr,
-           ScheduledTaskProcessorFactory _scheduledTaskProcessorFactory = nullptr,
+           ScheduledTaskProcessorFactoryMap _scheduledTaskProcessorFactoryMap = ScheduledTaskProcessorFactoryMap(),
            RocksDbCfConfiguratorMap _rocksDbCfConfiguratorMap = RocksDbCfConfiguratorMap(),
            RocksDbConfigurator _rocksDbConfigurator = nullptr,
            bool _singletonRedisHandler = true)
         : redisHandlerFactory(_redisHandlerFactory),
           kafkaConsumerFactoryMap(_kafkaConsumerFactoryMap),
           databaseManagerFactory(_databaseManagerFactory),
-          scheduledTaskProcessorFactory(_scheduledTaskProcessorFactory),
+          scheduledTaskProcessorFactoryMap(_scheduledTaskProcessorFactoryMap),
           rocksDbCfConfiguratorMap(std::move(_rocksDbCfConfiguratorMap)),
           rocksDbConfigurator(_rocksDbConfigurator),
           singletonRedisHandler(_singletonRedisHandler) {}
@@ -160,9 +162,10 @@ class RedisPipelineBootstrap {
     CHECK_NOTNULL(kafkaConsumerHelper_.get());
     return kafkaConsumerHelper_;
   }
-  std::shared_ptr<infra::ScheduledTaskQueue> getScheduledTaskQueue() const {
-    CHECK_NOTNULL(scheduledTaskQueue_.get());
-    return scheduledTaskQueue_;
+  std::shared_ptr<infra::ScheduledTaskQueue> getScheduledTaskQueue(const std::string& name) const {
+    auto it = scheduledTaskQueueMap_.find(name);
+    CHECK(it != scheduledTaskQueueMap_.end());
+    return it->second;
   }
   std::shared_ptr<infra::kafka::Producer> getKafkaProducer(const std::string& name) const {
     auto it = kafkaProducers_.find(name);
@@ -194,15 +197,15 @@ class RedisPipelineBootstrap {
   void initializeKafkaProducers(const std::string& brokerList, const std::string& kafkaProducerConfigs);
   void initializeKafkaConsumer(const std::string& brokerList, const std::string& kafkaConsumerConfigs,
                                int64_t versionTimestampMs);
-  void initializeScheduledTaskQueue();
+  void initializeScheduledTaskQueues();
   void initializeEmbeddedHttpServer(int httpPort, int redisServerPort);
 
   void startOptionalComponents() {
     if (databaseManager_) {
       databaseManager_->start();
     }
-    if (scheduledTaskQueue_) {
-      scheduledTaskQueue_->start();
+    for (auto& taskQueueEntry : scheduledTaskQueueMap_) {
+      taskQueueEntry.second->start();
     }
     // First initialize all consumers then start their consumer loops
     // Initialization may panic on verification failures. Panic before starting any consumer loops reduces the
@@ -232,8 +235,8 @@ class RedisPipelineBootstrap {
       // destroy is blocking and it will wait for each consumer to completely stop sequentially
       consumer->destroy();
     }
-    if (scheduledTaskQueue_) {
-      scheduledTaskQueue_->destroy();
+    for (auto& taskQueueEntry : scheduledTaskQueueMap_) {
+      taskQueueEntry.second->destroy();
     }
     for (auto& producerEntry : kafkaProducers_) {
       if (producerEntry.second) producerEntry.second->destroy();
@@ -312,7 +315,7 @@ class RedisPipelineBootstrap {
 
   // optional components
   std::shared_ptr<DatabaseManager> databaseManager_;
-  std::shared_ptr<infra::ScheduledTaskQueue> scheduledTaskQueue_;
+  std::unordered_map<std::string, std::shared_ptr<infra::ScheduledTaskQueue>> scheduledTaskQueueMap_;
   std::shared_ptr<infra::kafka::ConsumerHelper> kafkaConsumerHelper_;
   // Store consumers as a vector because the same topic may be used by multiple consumer classes, and the same
   // consumer class may be used by different topics or the same topic with different configurations
