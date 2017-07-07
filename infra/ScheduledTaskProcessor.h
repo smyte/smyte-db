@@ -26,6 +26,11 @@ class ScheduledTaskProcessor {
     LOG(FATAL) << "Must override generateTasks to generate tasks from opaque key/value pair";
     return -1;
   }
+
+  // Defines the maximum batch size the task processor is able to process
+  virtual size_t getMaxBatchSize() const {
+    return 10000;
+  }
 };
 
 }  // namespace infra

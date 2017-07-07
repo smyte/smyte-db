@@ -1,6 +1,7 @@
 #ifndef INFRA_SCHEDULEDTASKQUEUE_H_
 #define INFRA_SCHEDULEDTASKQUEUE_H_
 
+#include <algorithm>
 #include <atomic>
 #include <limits>
 #include <memory>
@@ -57,6 +58,7 @@ class ScheduledTaskQueue {
       : processor_(processor),
         databaseManager_(databaseManager),
         columnFamily_(columnFamily),
+        scanBatchSize_(std::min(processor->getMaxBatchSize(), kScanBatchSize)),
         run_(true),
         outstandingTaskCount_(0) {}
 
@@ -178,6 +180,7 @@ class ScheduledTaskQueue {
   std::shared_ptr<ScheduledTaskProcessor> processor_;
   std::shared_ptr<pipeline::DatabaseManager> databaseManager_;
   rocksdb::ColumnFamilyHandle* columnFamily_;
+  size_t scanBatchSize_;
   bool run_;
   std::atomic_size_t outstandingTaskCount_;
   // Background thread that executes tasks at schedule time.

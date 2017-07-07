@@ -29,7 +29,7 @@ void ScheduledTaskQueue::start() {
       int64_t maxTimestampMs =
         std::chrono::duration_cast<milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + 1;
       // loop until the queue is exhausted
-      while (this->batchProcessing(maxTimestampMs) == kScanBatchSize) {}
+      while (this->batchProcessing(maxTimestampMs) == scanBatchSize_) {}
       std::this_thread::sleep_for(milliseconds(kCheckIntervalMs));
     }
   }));
@@ -39,7 +39,7 @@ void ScheduledTaskQueue::start() {
 
 size_t ScheduledTaskQueue::batchProcessing(int64_t maxTimestampMs) {
   std::vector<ScheduledTask> tasks;
-  size_t count = scanPendingTasks(maxTimestampMs, kScanBatchSize, &tasks);
+  size_t count = scanPendingTasks(maxTimestampMs, scanBatchSize_, &tasks);
   if (count > 0) {
     DLOG(INFO) << "Found " << count << " pending tasks";
     rocksdb::WriteBatch writeBatch;
