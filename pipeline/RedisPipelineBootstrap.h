@@ -198,6 +198,8 @@ class RedisPipelineBootstrap {
   void initializeKafkaConsumer(const std::string& brokerList, const std::string& kafkaConsumerConfigs,
                                int64_t versionTimestampMs);
   void initializeScheduledTaskQueues();
+  void initializeRegistry();
+
   void initializeEmbeddedHttpServer(int httpPort, int redisServerPort);
 
   void startOptionalComponents() {

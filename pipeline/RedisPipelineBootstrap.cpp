@@ -502,13 +502,16 @@ void RedisPipelineBootstrap::initializeKafkaConsumer(const std::string& brokerLi
   }
 }
 
+void RedisPipelineBootstrap::initializeRegistry() {
+  metricsRegistry_ = std::make_shared<prometheus::Registry>();
+}
+
 void RedisPipelineBootstrap::initializeEmbeddedHttpServer(int httpPort, int redisServerPort) {
   embeddedHttpServer_ = std::make_shared<EmbeddedHttpServer>(httpPort);
 
   // Enable metrics at /metrics
   metricsExposer_ = std::make_shared<prometheus::Exposer>(embeddedHttpServer_->getBaseServer());
-  metricsRegistry_ = std::make_shared<prometheus::Registry>();
-  metricsExposer_->RegisterCollectable(metricsRegistry_);
+  metricsExposer_->RegisterCollectable(getMetricsRegistry());
 
   // Always install ready handler for health check
   CHECK(embeddedHttpServer_->registerHandler(
@@ -594,6 +597,7 @@ int main(int argc, char** argv) {
   CHECK_EQ(pipeline::DatabaseManager::defaultColumnFamilyName(), rocksdb::kDefaultColumnFamilyName);
 
   LOG(INFO) << "Initializing RedisPipeline";
+  redisPipelineBootstrap->initializeRegistry();
   redisPipelineBootstrap->initializeRocksDb(FLAGS_rocksdb_db_path, FLAGS_rocksdb_db_paths,
                                             FLAGS_rocksdb_cf_group_configs, FLAGS_rocksdb_drop_cf_group_configs,
                                             FLAGS_rocksdb_parallelism, FLAGS_rocksdb_block_cache_size_mb,
