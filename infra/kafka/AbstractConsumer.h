@@ -1,6 +1,8 @@
 #ifndef INFRA_KAFKA_ABSTRACTCONSUMER_H_
 #define INFRA_KAFKA_ABSTRACTCONSUMER_H_
 
+#include <pthread.h>
+
 #include <memory>
 #include <chrono>
 #include <string>
@@ -60,6 +62,7 @@ class AbstractConsumer {
         this->processBatch(timeoutMs);
       }
     }));
+    pthread_setname_np(consumerThread_->native_handle(), "kafka-consumer");
   }
 
   // Stop the consumer. This function should NOT block.
