@@ -1,5 +1,7 @@
 #include "infra/ScheduledTaskQueue.h"
 
+#include <pthread.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -33,6 +35,7 @@ void ScheduledTaskQueue::start() {
       std::this_thread::sleep_for(milliseconds(kCheckIntervalMs));
     }
   }));
+  pthread_setname_np(executionThread_->native_handle(), "scheduled-task-thread");
 
   LOG(INFO) << "ScheduledTaskQueue execution thread started";
 }
