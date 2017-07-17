@@ -35,7 +35,7 @@ void ScheduledTaskQueue::start() {
       std::this_thread::sleep_for(milliseconds(kCheckIntervalMs));
     }
   }));
-  pthread_setname_np(executionThread_->native_handle(), "scheduled-task-thread");
+  pthread_setname_np(executionThread_->native_handle(), "scheduled-task");
 
   LOG(INFO) << "ScheduledTaskQueue execution thread started";
 }
