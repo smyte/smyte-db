@@ -57,8 +57,13 @@ class SmyteId {
 
   explicit SmyteId(int64_t smyteId) : smyteId_(smyteId) {}
 
+  // Decode smyte id from string. Result is undefined if the string length is not sizeof(int64_t)
   explicit SmyteId(const std::string& smyteId)
       : smyteId_(boost::endian::detail::load_big_endian<int64_t, sizeof(int64_t)>(smyteId.data())) {}
+
+  // Decode smyte id from raw byte array. Result is undefined if byte array length is not sizeof(int64_t)
+  explicit SmyteId(const char* data)
+      : smyteId_(boost::endian::detail::load_big_endian<int64_t, sizeof(int64_t)>(data)) {}
 
   // Encode smyte id as an an 8-byte string. Use big endian so that it can be sorted in numerical order.
   std::string asBinary() const {
