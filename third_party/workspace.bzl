@@ -380,7 +380,7 @@ def smyte_workspace(workspace_name):
     native.new_git_repository(
         name = "rocksdb_git",
         remote = "https://github.com/facebook/rocksdb.git",
-        tag = "v5.4.6",
+        tag = "v5.7.3",
         build_file = workspace_name + "//third_party:rocksdb.BUILD",
     )
     native.bind(
