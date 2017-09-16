@@ -253,6 +253,7 @@ cc_library(
         "-DZLIB",
         "-fno-omit-frame-pointer",
         "-momit-leaf-frame-pointer",
+        "-msse4.2",
         "-pthread",
         "-Werror",
         "-Wsign-compare",
