@@ -7,7 +7,7 @@ def smyte_workspace(workspace_name):
         name = "avro_archive",
         url = "https://github.com/apache/avro/archive/release-1.8.1.tar.gz",
         strip_prefix = "avro-release-1.8.1",
-        sha256 = "1bd406e161ca384c14a224cd12c9f6cb5f0b07924f7d52179f4e2691d1b91b50",
+        sha256 = "40eff906762d841de0bc67a006fce69bb9ee816ad2d48afda05912a44427490a",
         build_file = workspace_name + "//third_party:avro.BUILD",
     )
     native.bind(
@@ -150,7 +150,7 @@ def smyte_workspace(workspace_name):
         # Note: update the version in BUILD file
         url = "https://github.com/google/google-api-cpp-client/archive/bb5aed1.tar.gz",
         strip_prefix = "google-api-cpp-client-bb5aed14f3d9aa7f513aedf06a04a98c65e2972b",
-        sha256 = "4f280cf21487161964556c2e0d61a3aff6429250929de1d9c94f92ff0265831e",
+        sha256 = "cb8da8fecbb42de173fbc52fd5597eaf878238033c53519118443fa64e3962ee",
         build_file = workspace_name + "//third_party:google_cloud_apis.BUILD",
     )
     native.bind(
@@ -181,7 +181,7 @@ def smyte_workspace(workspace_name):
         url = "https://developers.google.com/resources/api-libraries/download/storage/v1/cpp",
         type = "zip",
         strip_prefix = "storage",
-        sha256 = "6fadc41f24c3092e0abadb9fd92d9d2d37f8b382afa369dbf803178f705e5b7a",
+        sha256 = "7d20537984fbc24fccd2f2e783238d5f5f46241ef619e62050c3a66c97d7f34c",
         build_file = workspace_name + "//third_party:google_cloud_storage.BUILD",
     )
     native.bind(
@@ -423,7 +423,7 @@ def smyte_workspace(workspace_name):
         name = "wtf_archive",
         url = "https://github.com/google/tracing-framework/archive/f35328f.tar.gz",
         strip_prefix = "tracing-framework-f35328facf41b97cd33756f4a05b74533fe25440",
-        sha256 = "9222f5ea09a061f9710b92d451cceb602bea001a4cfc64726f6ce13aa9f9a8f8",
+        sha256 = "0cf3525b800a5598c2fd4341049434241caffa92fb88da5fb2e97dff55836c2f",
         build_file = workspace_name + "//third_party:wtf.BUILD",
     )
     native.bind(
