@@ -70,11 +70,6 @@
 #define FOLLY_HAVE_CLOCK_GETTIME 1
 #endif
 
-/* Define to 1 if strlen(3) is constexpr. */
-#ifndef FOLLY_HAVE_CONSTEXPR_STRLEN
-#define FOLLY_HAVE_CONSTEXPR_STRLEN 1
-#endif
-
 /* Define to 1 if we have cplus_demangle_v3_callback. */
 /* #undef HAVE_CPLUS_DEMANGLE_V3_CALLBACK */
 
@@ -114,6 +109,11 @@
 
 /* Define to 1 if you have the `bz2' library (-lbz2). */
 /* #undef HAVE_LIBBZ2 */
+
+/* Define to 1 if you have the `dl' library (-ldl). */
+#ifndef FOLLY_HAVE_LIBDL
+#define FOLLY_HAVE_LIBDL 1
+#endif
 
 /* Define to 1 if you have the `double-conversion' library
    (-ldouble-conversion). */
@@ -164,7 +164,9 @@
 #endif
 
 /* Define to 1 if liblinux-vdso is available */
-/* #undef HAVE_LINUX_VDSO */
+#ifndef FOLLY_HAVE_LINUX_VDSO
+#define FOLLY_HAVE_LINUX_VDSO 1
+#endif
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #ifndef FOLLY_HAVE_MALLOC_H
