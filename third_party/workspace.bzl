@@ -118,9 +118,9 @@ def smyte_workspace(workspace_name):
     # gflags
     native.http_archive(
         name = "com_github_gflags_gflags",  # match the name defined in its WORKSPACE file
-        url = "https://github.com/gflags/gflags/archive/9314597.tar.gz",
-        strip_prefix = "gflags-9314597d4b742ed6f95665241345e590a0f5759b",
-        sha256 = "75155b41074c09b2788e2415c1b6151b663afca9825c1345714a9476438a5336",
+        url = "https://github.com/gflags/gflags/archive/60784b5.tar.gz",
+        strip_prefix = "gflags-60784b53e364c2e2594916bc84af075c4f679fa8",
+        sha256 = "0f696d48ce41775f9223627a77fd155c069a2ad24c208e2b2b3b3ab01c85a4a0",
     )
     native.bind(
         name = "gflags",
