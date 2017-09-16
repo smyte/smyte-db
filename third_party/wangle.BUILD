@@ -8,7 +8,6 @@ cc_library(
         "wangle/acceptor/*.cpp",
         "wangle/channel/*.cpp",
         "wangle/codec/*.cpp",
-        "wangle/concurrent/*.cpp",
         "wangle/ssl/*.cpp",
         ],
         exclude = ["wangle/codec/CodecTest.cpp"],
