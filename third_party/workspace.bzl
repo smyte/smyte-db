@@ -5,9 +5,9 @@ def smyte_workspace(workspace_name):
     # avro
     native.new_http_archive(
         name = "avro_archive",
-        url = "https://github.com/apache/avro/archive/release-1.8.1.tar.gz",
-        strip_prefix = "avro-release-1.8.1",
-        sha256 = "40eff906762d841de0bc67a006fce69bb9ee816ad2d48afda05912a44427490a",
+        url = "https://github.com/apache/avro/archive/release-1.8.2.tar.gz",
+        strip_prefix = "avro-release-1.8.2",
+        sha256 = "19040889f2c822445b6ccf14e6f13ccf2d7851458790ae1539a2688d21c76ae0",
         build_file = workspace_name + "//third_party:avro.BUILD",
     )
     native.bind(
