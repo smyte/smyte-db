@@ -354,7 +354,7 @@ def smyte_workspace(workspace_name):
     native.git_repository(
         name = "protobuf_git",
         remote = "https://github.com/google/protobuf.git",
-        tag = "v3.3.0",
+        tag = "v3.4.1",
     )
     native.bind(
         name = "protobuf_protoc",
