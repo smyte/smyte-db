@@ -60,7 +60,7 @@ def smyte_workspace(workspace_name):
     native.new_git_repository(
         name = "civetweb_git",
         remote = "https://github.com/civetweb/civetweb.git",
-        commit = "85424a4",
+        commit = "85424a4ad51eadc7e0b5942cadff2869a3ea1d84",
         build_file = workspace_name + "//third_party:civetweb.BUILD"
     )
     native.bind(
