@@ -7,6 +7,8 @@ This repo is the central build environment for all Smyte C++ projects. For docum
 Smyte's C++ development is based on facebook's [folly](https://github.com/facebook/folly) and [wangle](https://github.com/facebook/wangle) libraries to build high performance servers. The build system uses Google's [bazel](http://bazel.io/). By default, it builds a single executable binary that can be deployed to production directly.
 
 ## Setup
+
+* Building this project requires Linux.
 * Install `bazel`, `libssl-dev`, and `libatomic1`.
 * Ensure submodules are up-to-date: `git submodule update --init`.
 * Build a project: `bazel clean && bazel build ratelimit`. The first build may take a while to fetch all the third-party dependencies and build static libraries.
